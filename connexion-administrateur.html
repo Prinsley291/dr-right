@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Connexion administrateur - Dr. Right</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <!-- Bibliothèque Supabase -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <h1>Dr. Right</h1>
+
+    <h2>
+        Connexion administrateur
+    </h2>
+
+
+    <form id="form-connexion-admin">
+
+        <input
+            id="email-admin"
+            type="email"
+            placeholder="Email administrateur"
+            required
+        >
+
+
+        <input
+            id="mot-de-passe-admin"
+            type="password"
+            placeholder="Mot de passe"
+            required
+        >
+
+
+        <button type="submit">
+            Se connecter
+        </button>
+
+    </form>
+
+
+    <p id="message-connexion"></p>
+
+<a href="index.html">
+    Retour à l'accueil
+</a>
+
+</div>
+
+<script>
+
+const formulaireAdmin =
+    document.getElementById("form-connexion-admin");
+
+formulaireAdmin.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+        const email =
+            document.getElementById("email-admin").value.trim();
+
+        const motDePasse =
+            document.getElementById("mot-de-passe-admin").value;
+
+        const message =
+            document.getElementById("message-connexion");
+
+        message.textContent = "Connexion en cours...";
+
+        const { data, error } =
+            await supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: motDePasse
+            });
+
+        if (error) {
+            console.error(error);
+
+            message.textContent =
+                "Email ou mot de passe incorrect.";
+
+            return;
+        }
+
+        if (!data.user) {
+            message.textContent =
+                "Impossible de connecter cet utilisateur.";
+
+            return;
+        }
+
+        const {
+            data: administrateur,
+            error: erreurAdministrateur
+        } = await supabaseClient
+            .from("administrateurs")
+            .select("*")
+            .eq("auth_user_id", data.user.id)
+            .eq("statut", "actif")
+            .maybeSingle();
+
+        if (erreurAdministrateur || !administrateur) {
+
+            console.error(erreurAdministrateur);
+
+            await supabaseClient.auth.signOut();
+
+            message.textContent =
+                "Ce compte n'est pas autorisé comme administrateur actif.";
+
+            return;
+        }
+
+        message.textContent =
+    "Connexion réussie. Redirection...";
+
+setTimeout(function () {
+
+    window.location.href =
+        "./administrateur.html";
+
+}, 1000);
+    }
+);
+</script>
+
+</body>
+</html>

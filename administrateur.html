@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Administration - Dr. Right</title>
+
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Dr. Right</h1>
+
+    <h2>Tableau de bord administrateur</h2>
+
+    <p id="admin-bienvenue">
+        Chargement de votre profil...
+    </p>
+
+
+    <div class="menu-dashboard">
+
+    <a href="etudiants.html">
+        <button>Gérer les étudiants</button>
+    </a>
+
+    <a href="operations.html">
+        <button>Dettes et opérations</button>
+    </a>
+
+    <a href="paiements.html">
+        <button>Enregistrer un paiement</button>
+    </a>
+
+    <a href="produits.html">
+        <button>Gérer les produits</button>
+    </a>
+
+    <a href="compagnies.html">
+        <button>Voir les compagnies</button>
+    </a>
+
+    <a href="rapports.html">
+        <button>Rapports et PDF</button>
+    </a>
+
+    </div>
+
+
+    <button id="bouton-deconnexion">
+        Se déconnecter
+    </button>
+
+</div>
+
+
+<!-- SUPABASE -->
+
+
+
+<script>
+
+// ==========================================
+    // ELEMENTS DE LA PAGE
+    // ==========================================
+
+    const bienvenue =
+        document.getElementById("admin-bienvenue");
+
+    const boutonDeconnexion =
+        document.getElementById("bouton-deconnexion");
+
+
+    // ==========================================
+    // VERIFIER LA SESSION ET L'ADMINISTRATEUR
+    // ==========================================
+
+    async function verifierAdministrateur() {
+
+        bienvenue.textContent =
+            "Vérification de votre accès...";
+
+
+        // --------------------------------------
+        // RECUPERER LA SESSION ACTUELLE
+        // --------------------------------------
+
+        const {
+            data: sessionData,
+            error: sessionError
+        } = await supabaseClient.auth.getSession();
+
+
+        if (sessionError) {
+
+            console.error(
+                "Erreur session :",
+                sessionError
+            );
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return;
+        }
+
+
+        const session =
+            sessionData.session;
+
+
+        // --------------------------------------
+        // AUCUNE SESSION
+        // --------------------------------------
+
+        if (!session) {
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return;
+        }
+
+
+        // --------------------------------------
+        // VERIFIER L'ADMINISTRATEUR
+        // --------------------------------------
+
+        const {
+            data: administrateur,
+            error: erreurAdministrateur
+        } = await supabaseClient
+            .from("administrateurs")
+            .select("*")
+            .eq(
+                "auth_user_id",
+                session.user.id
+            )
+            .eq(
+                "statut",
+                "actif"
+            )
+            .maybeSingle();
+
+
+        // --------------------------------------
+        // UTILISATEUR NON AUTORISE
+        // --------------------------------------
+
+        if (
+            erreurAdministrateur ||
+            !administrateur
+        ) {
+
+            console.error(
+                "Accès administrateur refusé :",
+                erreurAdministrateur
+            );
+
+
+            bienvenue.textContent =
+                "Accès non autorisé.";
+
+
+            await supabaseClient
+                .auth
+                .signOut();
+
+
+            setTimeout(function () {
+
+                window.location.href =
+                    "./connexion-administrateur.html";
+
+            }, 1000);
+
+
+            return;
+        }
+
+
+        // --------------------------------------
+        // ADMINISTRATEUR AUTORISE
+        // --------------------------------------
+
+        const prenom =
+            administrateur.prenom || "";
+
+        const nom =
+            administrateur.nom || "";
+
+
+        const nomComplet =
+            `${prenom} ${nom}`.trim();
+
+
+        if (nomComplet) {
+
+            bienvenue.textContent =
+                `Bienvenue ${nomComplet}`;
+
+        } else {
+
+            bienvenue.textContent =
+                "Bienvenue dans votre espace d'administration.";
+
+        }
+
+    }
+
+
+    // ==========================================
+    // DECONNEXION
+    // ==========================================
+
+    boutonDeconnexion.addEventListener(
+        "click",
+        async function () {
+
+            boutonDeconnexion.disabled = true;
+
+            boutonDeconnexion.textContent =
+                "Déconnexion...";
+
+
+            const { error } =
+                await supabaseClient
+                    .auth
+                    .signOut();
+
+
+            if (error) {
+
+                console.error(
+                    "Erreur de déconnexion :",
+                    error
+                );
+
+
+                boutonDeconnexion.disabled = false;
+
+                boutonDeconnexion.textContent =
+                    "Se déconnecter";
+
+                return;
+            }
+
+
+            window.location.href =
+                "./index.html";
+
+        }
+    );
+
+
+    // ==========================================
+    // LANCEMENT
+    // ==========================================
+
+    verifierAdministrateur();
+
+</script>
+
+
+</body>
+
+</html>

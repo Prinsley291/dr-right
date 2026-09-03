@@ -1,0 +1,2060 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Compagnies - Dr. Right</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <style>
+
+        /* =========================================
+           TABLEAU DES ETUDIANTS
+           ========================================= */
+
+        #liste-etudiants-compagnie table {
+
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+
+        }
+
+
+        #liste-etudiants-compagnie th,
+        #liste-etudiants-compagnie td {
+
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+
+        }
+
+
+        #liste-etudiants-compagnie th {
+
+            font-weight: bold;
+
+        }
+
+
+        /* =========================================
+           TITRE D'IMPRESSION
+           ========================================= */
+
+        #titre-impression-compagnie {
+
+            display: none;
+
+        }
+
+
+        /* =========================================
+           VERSION IMPRESSION
+           ========================================= */
+
+        @media print {
+
+            @page {
+
+                margin: 10mm;
+
+            }
+
+
+            body {
+
+                margin: 0;
+                padding: 0;
+                background: white;
+
+            }
+
+
+            .container {
+
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+
+            }
+
+
+            /* -----------------------------
+               Masquer les éléments écran
+               ----------------------------- */
+
+            body > .container > h1,
+            body > .container > h2:first-of-type,
+
+            #message-page,
+
+            body > .container > a,
+
+            #bouton-ajouter-compagnie,
+
+            #zone-ajout-compagnie,
+
+            #liste-compagnies,
+
+            #bouton-ajouter-etudiant-compagnie,
+
+            #bouton-imprimer-compagnie,
+
+            #zone-ajout-etudiant-compagnie,
+
+            #titre-compagnie-selectionnee,
+
+            #nombre-etudiants-compagnie,
+
+            #zone-compagnie-selectionnee > hr:first-child {
+
+                display: none !important;
+
+            }
+
+
+            /* -----------------------------
+               Afficher le titre d'impression
+               ----------------------------- */
+
+            #titre-impression-compagnie {
+
+                display: block !important;
+
+                text-align: center;
+
+                margin-bottom: 15px;
+
+            }
+
+
+            #titre-impression-compagnie h1 {
+
+                margin: 0 0 5px 0;
+
+                font-size: 20px;
+
+            }
+
+
+            #titre-impression-compagnie h2 {
+
+                margin: 0 0 5px 0;
+
+                font-size: 16px;
+
+            }
+
+
+            #titre-impression-compagnie p {
+
+                margin: 0;
+
+                font-size: 11px;
+
+            }
+
+
+            /* -----------------------------
+               Zone sélectionnée
+               ----------------------------- */
+
+            #zone-compagnie-selectionnee {
+
+                display: block !important;
+
+            }
+
+
+            /* -----------------------------
+               Tableau
+               ----------------------------- */
+
+            #liste-etudiants-compagnie {
+
+                width: 100%;
+
+            }
+
+
+            #liste-etudiants-compagnie table {
+
+                width: 100%;
+
+                border-collapse: collapse;
+
+                font-size: 10px;
+
+                margin-top: 0;
+
+            }
+
+
+            #liste-etudiants-compagnie th,
+            #liste-etudiants-compagnie td {
+
+                border: 1px solid #555;
+
+                padding: 5px;
+
+            }
+
+
+            #liste-etudiants-compagnie tr {
+
+                page-break-inside: avoid;
+
+                break-inside: avoid;
+
+            }
+
+
+            /* -----------------------------
+               Eviter les gros espaces
+               ----------------------------- */
+
+            h1,
+            h2,
+            h3,
+            p {
+
+                page-break-after: avoid;
+
+            }
+
+        }
+
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <h1>Dr. Right</h1>
+
+    <h2>Les compagnies</h2>
+
+
+    <p id="message-page">
+        Vérification de votre accès...
+    </p>
+
+
+    <a href="administrateur.html">
+
+        <button type="button">
+            Retour au tableau de bord
+        </button>
+
+    </a>
+
+
+    <br>
+    <br>
+
+
+    <!-- ========================================= -->
+    <!-- AJOUT COMPAGNIE                           -->
+    <!-- ========================================= -->
+
+    <button
+        id="bouton-ajouter-compagnie"
+        type="button"
+    >
+        Ajouter une compagnie
+    </button>
+
+
+    <div
+        id="zone-ajout-compagnie"
+        style="display: none;"
+    >
+
+        <h3>Nouvelle compagnie</h3>
+
+
+        <form id="form-ajout-compagnie">
+
+            <input
+                id="nom-compagnie"
+                type="text"
+                placeholder="Nom de la compagnie"
+                required
+            >
+
+
+            <button type="submit">
+                Enregistrer
+            </button>
+
+        </form>
+
+
+        <p id="message-ajout-compagnie"></p>
+
+    </div>
+
+
+    <hr>
+
+
+    <!-- ========================================= -->
+    <!-- LISTE DES COMPAGNIES                      -->
+    <!-- ========================================= -->
+
+    <div id="liste-compagnies">
+
+        Chargement des compagnies...
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- ZONE COMPAGNIE SELECTIONNEE              -->
+    <!-- ========================================= -->
+
+    <div
+        id="zone-compagnie-selectionnee"
+        style="display: none;"
+    >
+
+        <hr>
+
+
+        <h2 id="titre-compagnie-selectionnee"></h2>
+
+
+        <p id="nombre-etudiants-compagnie"></p>
+
+
+        <!-- ===================================== -->
+        <!-- TITRE POUR IMPRESSION                 -->
+        <!-- ===================================== -->
+
+        <div id="titre-impression-compagnie">
+
+            <h1>
+                Dr. Right
+            </h1>
+
+            <h2 id="nom-compagnie-impression"></h2>
+
+            <p id="date-impression-compagnie"></p>
+
+        </div>
+
+
+        <!-- ===================================== -->
+        <!-- BOUTON IMPRESSION                     -->
+        <!-- ===================================== -->
+
+        <button
+            id="bouton-imprimer-compagnie"
+            type="button"
+        >
+            🖨️ Imprimer la liste de cette compagnie
+        </button>
+
+
+        <br>
+        <br>
+
+
+        <button
+            id="bouton-ajouter-etudiant-compagnie"
+            type="button"
+        >
+            Ajouter un étudiant dans cette compagnie
+        </button>
+
+
+        <br>
+        <br>
+
+
+        <!-- ===================================== -->
+        <!-- LISTE COMPACTE DES ETUDIANTS          -->
+        <!-- ===================================== -->
+
+        <div
+            id="liste-etudiants-compagnie"
+        >
+
+            Chargement des étudiants...
+
+        </div>
+
+
+        <!-- ===================================== -->
+        <!-- FORMULAIRE AJOUT ETUDIANT             -->
+        <!-- ===================================== -->
+
+        <div
+            id="zone-ajout-etudiant-compagnie"
+            style="display: none;"
+        >
+
+            <h3>
+                Nouvel étudiant
+            </h3>
+
+
+            <p>
+
+                Compagnie :
+                <strong
+                    id="compagnie-selectionnee-formulaire"
+                ></strong>
+
+            </p>
+
+
+            <form
+                id="form-ajout-etudiant-compagnie"
+            >
+
+                <input
+                    id="compagnie-etudiant-nom"
+                    type="text"
+                    placeholder="Nom"
+                    required
+                >
+
+
+                <input
+                    id="compagnie-etudiant-prenom"
+                    type="text"
+                    placeholder="Prénom"
+                    required
+                >
+
+
+                <input
+                    id="compagnie-etudiant-numero-principal"
+                    type="tel"
+                    placeholder="Numéro principal"
+                    required
+                >
+
+
+                <input
+                    id="compagnie-etudiant-numero-secondaire"
+                    type="tel"
+                    placeholder="Numéro secondaire (facultatif)"
+                >
+
+
+                <input
+                    id="compagnie-etudiant-email"
+                    type="email"
+                    placeholder="Email de connexion"
+                    autocomplete="off"
+                    required
+                >
+
+
+                <input
+                    id="compagnie-etudiant-mot-de-passe"
+                    type="password"
+                    placeholder="Mot de passe"
+                    autocomplete="new-password"
+                    minlength="6"
+                    required
+                >
+
+
+                <button
+                    type="submit"
+                >
+                    Enregistrer l'étudiant
+                </button>
+
+
+                <button
+                    type="button"
+                    id="bouton-annuler-ajout-etudiant"
+                >
+                    Annuler
+                </button>
+
+            </form>
+
+
+            <p
+                id="message-ajout-etudiant-compagnie"
+            ></p>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================= -->
+<!-- SUPABASE                                  -->
+<!-- ========================================= -->
+
+
+
+<script>
+
+// ==========================================
+// ELEMENTS
+// ==========================================
+
+const messagePage =
+    document.getElementById(
+        "message-page"
+    );
+
+
+const listeCompagnies =
+    document.getElementById(
+        "liste-compagnies"
+    );
+
+
+const boutonAjouterCompagnie =
+    document.getElementById(
+        "bouton-ajouter-compagnie"
+    );
+
+
+const zoneAjoutCompagnie =
+    document.getElementById(
+        "zone-ajout-compagnie"
+    );
+
+
+const formulaireAjoutCompagnie =
+    document.getElementById(
+        "form-ajout-compagnie"
+    );
+
+
+const messageAjoutCompagnie =
+    document.getElementById(
+        "message-ajout-compagnie"
+    );
+
+
+const zoneCompagnieSelectionnee =
+    document.getElementById(
+        "zone-compagnie-selectionnee"
+    );
+
+
+const titreCompagnieSelectionnee =
+    document.getElementById(
+        "titre-compagnie-selectionnee"
+    );
+
+
+const nombreEtudiantsCompagnie =
+    document.getElementById(
+        "nombre-etudiants-compagnie"
+    );
+
+
+const boutonAjouterEtudiantCompagnie =
+    document.getElementById(
+        "bouton-ajouter-etudiant-compagnie"
+    );
+
+
+const boutonImprimerCompagnie =
+    document.getElementById(
+        "bouton-imprimer-compagnie"
+    );
+
+
+const nomCompagnieImpression =
+    document.getElementById(
+        "nom-compagnie-impression"
+    );
+
+
+const dateImpressionCompagnie =
+    document.getElementById(
+        "date-impression-compagnie"
+    );
+
+
+const zoneAjoutEtudiantCompagnie =
+    document.getElementById(
+        "zone-ajout-etudiant-compagnie"
+    );
+
+
+const compagnieSelectionneeFormulaire =
+    document.getElementById(
+        "compagnie-selectionnee-formulaire"
+    );
+
+
+const listeEtudiantsCompagnie =
+    document.getElementById(
+        "liste-etudiants-compagnie"
+    );
+
+
+const formulaireAjoutEtudiantCompagnie =
+    document.getElementById(
+        "form-ajout-etudiant-compagnie"
+    );
+
+
+const boutonAnnulerAjoutEtudiant =
+    document.getElementById(
+        "bouton-annuler-ajout-etudiant"
+    );
+
+
+const messageAjoutEtudiantCompagnie =
+    document.getElementById(
+        "message-ajout-etudiant-compagnie"
+    );
+
+
+// ==========================================
+// DONNEES
+// ==========================================
+
+let toutesLesCompagnies = [];
+
+let compagnieSelectionnee = null;
+
+
+// ==========================================
+// FORMATER UN MONTANT
+// ==========================================
+
+function formaterMontant(
+    montant
+) {
+
+    return Number(
+        montant || 0
+    ).toLocaleString(
+        "fr-FR"
+    );
+
+}
+
+
+// ==========================================
+// ORDRE LOGIQUE DES COMPAGNIES
+// ==========================================
+
+function obtenirNumeroCompagnie(nom) {
+
+    const texte =
+        String(nom || "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(
+                /[\u0300-\u036f]/g,
+                ""
+            );
+
+
+    const correspondances = [
+
+        {
+            mots: [
+                "premiere",
+                "1ere",
+                "1ere cie",
+                "1ere compagnie",
+                "1ere cie.",
+                "1ere compagnie."
+            ],
+            numero: 1
+        },
+
+        {
+            mots: [
+                "deuxieme",
+                "2eme",
+                "2e",
+                "2eme cie",
+                "2eme compagnie",
+                "2e cie",
+                "2e compagnie"
+            ],
+            numero: 2
+        },
+
+        {
+            mots: [
+                "troisieme",
+                "3eme",
+                "3e",
+                "3eme cie",
+                "3eme compagnie",
+                "3e cie",
+                "3e compagnie"
+            ],
+            numero: 3
+        },
+
+        {
+            mots: [
+                "quatrieme",
+                "4eme",
+                "4e",
+                "4eme cie",
+                "4eme compagnie",
+                "4e cie",
+                "4e compagnie"
+            ],
+            numero: 4
+        },
+
+        {
+            mots: [
+                "cinquieme",
+                "5eme",
+                "5e",
+                "5eme cie",
+                "5eme compagnie",
+                "5e cie",
+                "5e compagnie"
+            ],
+            numero: 5
+        },
+
+        {
+            mots: [
+                "sixieme",
+                "6eme",
+                "6e",
+                "6eme cie",
+                "6eme compagnie",
+                "6e cie",
+                "6e compagnie"
+            ],
+            numero: 6
+        },
+
+        {
+            mots: [
+                "septieme",
+                "7eme",
+                "7e",
+                "7eme cie",
+                "7eme compagnie",
+                "7e cie",
+                "7e compagnie"
+            ],
+            numero: 7
+        },
+
+        {
+            mots: [
+                "huitieme",
+                "8eme",
+                "8e",
+                "8eme cie",
+                "8eme compagnie",
+                "8e cie",
+                "8e compagnie"
+            ],
+            numero: 8
+        },
+
+        {
+            mots: [
+                "neuvieme",
+                "9eme",
+                "9e",
+                "9eme cie",
+                "9eme compagnie",
+                "9e cie",
+                "9e compagnie"
+            ],
+            numero: 9
+        },
+
+        {
+            mots: [
+                "dixieme",
+                "10eme",
+                "10e",
+                "10eme cie",
+                "10eme compagnie",
+                "10e cie",
+                "10e compagnie"
+            ],
+            numero: 10
+        }
+
+    ];
+
+
+    for (
+        const correspondance
+        of correspondances
+    ) {
+
+        for (
+            const mot
+            of correspondance.mots
+        ) {
+
+            if (
+                texte.startsWith(mot)
+            ) {
+
+                return correspondance.numero;
+
+            }
+
+        }
+
+    }
+
+
+    const nombre =
+        texte.match(
+            /^\s*(\d+)/
+        );
+
+
+    if (nombre) {
+
+        return Number(
+            nombre[1]
+        );
+
+    }
+
+
+    return 9999;
+
+}
+
+
+// ==========================================
+// TRIER LES COMPAGNIES
+// ==========================================
+
+function trierCompagnies(compagnies) {
+
+    return [...compagnies].sort(
+        function (a, b) {
+
+            const numeroA =
+                obtenirNumeroCompagnie(
+                    a.nom
+                );
+
+
+            const numeroB =
+                obtenirNumeroCompagnie(
+                    b.nom
+                );
+
+
+            if (
+                numeroA !== numeroB
+            ) {
+
+                return numeroA - numeroB;
+
+            }
+
+
+            return String(
+                a.nom || ""
+            ).localeCompare(
+                String(
+                    b.nom || ""
+                ),
+                "fr",
+                {
+                    sensitivity: "base"
+                }
+            );
+
+        }
+    );
+
+}
+
+
+// ==========================================
+// VERIFIER ADMINISTRATEUR
+// ==========================================
+
+async function verifierAdministrateur() {
+
+    messagePage.textContent =
+        "Vérification de votre accès...";
+
+
+    const {
+        data: sessionData,
+        error: sessionError
+    } = await supabaseClient
+        .auth
+        .getSession();
+
+
+    if (
+        sessionError ||
+        !sessionData.session
+    ) {
+
+        window.location.href =
+            "./connexion-administrateur.html";
+
+        return false;
+
+    }
+
+
+    const session =
+        sessionData.session;
+
+
+    const {
+        data: administrateur,
+        error
+    } = await supabaseClient
+
+        .from("administrateurs")
+
+        .select(
+            "id, prenom, nom"
+        )
+
+        .eq(
+            "auth_user_id",
+            session.user.id
+        )
+
+        .eq(
+            "statut",
+            "actif"
+        )
+
+        .maybeSingle();
+
+
+    if (
+        error ||
+        !administrateur
+    ) {
+
+        await supabaseClient
+            .auth
+            .signOut();
+
+
+        window.location.href =
+            "./connexion-administrateur.html";
+
+        return false;
+
+    }
+
+
+    messagePage.textContent =
+        `Connecté : ${administrateur.prenom || ""} ${administrateur.nom || ""}`;
+
+
+    return true;
+
+}
+
+
+// ==========================================
+// CHARGER LES COMPAGNIES
+// ==========================================
+
+async function chargerCompagnies() {
+
+    listeCompagnies.innerHTML =
+        "Chargement des compagnies...";
+
+
+    const {
+        data: compagnies,
+        error
+    } = await supabaseClient
+
+        .from("compagnies")
+
+        .select(`
+            *,
+            etudiants (
+                id
+            )
+        `);
+
+
+    if (error) {
+
+        console.error(
+            "Erreur chargement compagnies :",
+            error
+        );
+
+
+        listeCompagnies.innerHTML =
+            "Impossible de charger les compagnies.";
+
+        return;
+
+    }
+
+
+    toutesLesCompagnies =
+        trierCompagnies(
+            compagnies || []
+        );
+
+
+    afficherCompagnies(
+        toutesLesCompagnies
+    );
+
+}
+
+
+// ==========================================
+// AFFICHER LES COMPAGNIES
+// ==========================================
+
+function afficherCompagnies(compagnies) {
+
+    listeCompagnies.innerHTML = "";
+
+
+    if (
+        !compagnies ||
+        compagnies.length === 0
+    ) {
+
+        listeCompagnies.innerHTML =
+            "<p>Aucune compagnie enregistrée.</p>";
+
+        return;
+
+    }
+
+
+    compagnies.forEach(
+        function (compagnie) {
+
+
+            const carte =
+                document.createElement("div");
+
+
+            carte.className =
+                "carte-operation";
+
+
+            const nombreEtudiants =
+                compagnie.etudiants
+                    ? compagnie.etudiants.length
+                    : 0;
+
+
+            carte.innerHTML = `
+
+                <h3>
+                    ${compagnie.nom}
+                </h3>
+
+
+                <p>
+                    <strong>
+                        Nombre d'étudiants :
+                    </strong>
+
+                    ${nombreEtudiants}
+                </p>
+
+
+                <button
+                    type="button"
+                    class="bouton-voir-etudiants"
+                >
+                    Voir les étudiants
+                </button>
+
+
+                <button
+                    type="button"
+                    class="bouton-ajouter-etudiant"
+                >
+                    Ajouter un étudiant
+                </button>
+
+            `;
+
+
+            // ==================================
+            // VOIR LES ETUDIANTS
+            // ==================================
+
+            const boutonVoir =
+                carte.querySelector(
+                    ".bouton-voir-etudiants"
+                );
+
+
+            boutonVoir.addEventListener(
+                "click",
+                function () {
+
+                    ouvrirCompagnie(
+                        compagnie
+                    );
+
+                }
+            );
+
+
+            // ==================================
+            // AJOUTER ETUDIANT
+            // ==================================
+
+            const boutonAjouter =
+                carte.querySelector(
+                    ".bouton-ajouter-etudiant"
+                );
+
+
+            boutonAjouter.addEventListener(
+                "click",
+                async function () {
+
+                    await ouvrirCompagnie(
+                        compagnie
+                    );
+
+
+                    zoneAjoutEtudiantCompagnie
+                        .style
+                        .display =
+                        "block";
+
+                }
+            );
+
+
+            listeCompagnies.appendChild(
+                carte
+            );
+
+        }
+    );
+
+}
+
+
+// ==========================================
+// OUVRIR UNE COMPAGNIE
+// ==========================================
+
+async function ouvrirCompagnie(
+    compagnie
+) {
+
+    compagnieSelectionnee =
+        compagnie;
+
+
+    zoneCompagnieSelectionnee
+        .style
+        .display =
+        "block";
+
+
+    titreCompagnieSelectionnee.textContent =
+        `Compagnie : ${compagnie.nom}`;
+
+
+    nomCompagnieImpression.textContent =
+        `Liste des étudiants — ${compagnie.nom}`;
+
+
+    compagnieSelectionneeFormulaire
+        .textContent =
+        compagnie.nom;
+
+
+    zoneAjoutEtudiantCompagnie
+        .style
+        .display =
+        "none";
+
+
+    await chargerEtudiantsCompagnie();
+
+
+    zoneCompagnieSelectionnee
+        .scrollIntoView({
+            behavior:
+                "smooth"
+        });
+
+}
+
+
+// ==========================================
+// CHARGER LES ETUDIANTS D'UNE COMPAGNIE
+// ==========================================
+
+async function chargerEtudiantsCompagnie() {
+
+    if (!compagnieSelectionnee) {
+
+        return;
+
+    }
+
+
+    listeEtudiantsCompagnie.innerHTML =
+        "Chargement des étudiants...";
+
+
+    nombreEtudiantsCompagnie.textContent =
+        "";
+
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("etudiants")
+
+        .select(`
+            id,
+            nom,
+            prenom,
+            dette_jus,
+            dette_manger,
+            statut
+        `)
+
+        .eq(
+            "compagnie_id",
+            compagnieSelectionnee.id
+        )
+
+        .order(
+            "nom",
+            {
+                ascending: true
+            }
+        )
+
+        .order(
+            "prenom",
+            {
+                ascending: true
+            }
+        );
+
+
+    if (error) {
+
+        console.error(
+            "Erreur chargement étudiants :",
+            error
+        );
+
+
+        listeEtudiantsCompagnie.innerHTML =
+            "Impossible de charger les étudiants.";
+
+        return;
+
+    }
+
+
+    const nombre =
+        data
+            ? data.length
+            : 0;
+
+
+    nombreEtudiantsCompagnie.textContent =
+        `${nombre} étudiant(s) dans cette compagnie.`;
+
+
+    if (
+        !data ||
+        data.length === 0
+    ) {
+
+        listeEtudiantsCompagnie.innerHTML =
+            "<p>Aucun étudiant dans cette compagnie.</p>";
+
+        return;
+
+    }
+
+
+    // ======================================
+    // CREER LE TABLEAU
+    // ======================================
+
+    const tableau =
+        document.createElement(
+            "table"
+        );
+
+
+    tableau.style.width =
+        "100%";
+
+
+    tableau.style.borderCollapse =
+        "collapse";
+
+
+    tableau.innerHTML = `
+
+        <thead>
+
+            <tr>
+
+                <th>
+                    N°
+                </th>
+
+                <th>
+                    Nom
+                </th>
+
+                <th>
+                    Prénom
+                </th>
+
+                <th>
+                    Dette jus
+                </th>
+
+                <th>
+                    Dette manger
+                </th>
+
+                <th>
+                    Dette totale
+                </th>
+
+                <th>
+                    Statut
+                </th>
+
+            </tr>
+
+        </thead>
+
+
+        <tbody></tbody>
+
+    `;
+
+
+    const corpsTableau =
+        tableau.querySelector(
+            "tbody"
+        );
+
+
+    data.forEach(
+        function (
+            etudiant,
+            index
+        ) {
+
+
+            const detteJus =
+                Number(
+                    etudiant.dette_jus || 0
+                );
+
+
+            const detteManger =
+                Number(
+                    etudiant.dette_manger || 0
+                );
+
+
+            const detteTotale =
+                detteJus +
+                detteManger;
+
+
+            const ligne =
+                document.createElement(
+                    "tr"
+                );
+
+
+            ligne.innerHTML = `
+
+                <td>
+                    ${index + 1}
+                </td>
+
+
+                <td>
+                    ${etudiant.nom || ""}
+                </td>
+
+
+                <td>
+                    ${etudiant.prenom || ""}
+                </td>
+
+
+                <td>
+                    ${formaterMontant(
+                        detteJus
+                    )}
+                </td>
+
+
+                <td>
+                    ${formaterMontant(
+                        detteManger
+                    )}
+                </td>
+
+
+                <td>
+                    <strong>
+                        ${formaterMontant(
+                            detteTotale
+                        )}
+                    </strong>
+                </td>
+
+
+                <td>
+                    ${etudiant.statut || "Non renseigné"}
+                </td>
+
+            `;
+
+
+            corpsTableau.appendChild(
+                ligne
+            );
+
+        }
+    );
+
+
+    listeEtudiantsCompagnie.innerHTML =
+        "";
+
+
+    listeEtudiantsCompagnie.appendChild(
+        tableau
+    );
+
+}
+
+
+// ==========================================
+// PREPARER LA DATE D'IMPRESSION
+// ==========================================
+
+function preparerDateImpressionCompagnie() {
+
+    const maintenant =
+        new Date();
+
+
+    dateImpressionCompagnie.textContent =
+        "Date du rapport : " +
+        maintenant.toLocaleDateString(
+            "fr-FR"
+        ) +
+        " à " +
+        maintenant.toLocaleTimeString(
+            "fr-FR",
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+}
+
+
+// ==========================================
+// IMPRIMER LA COMPAGNIE
+// ==========================================
+
+function imprimerCompagnie() {
+
+    if (!compagnieSelectionnee) {
+
+        return;
+
+    }
+
+
+    preparerDateImpressionCompagnie();
+
+
+    /*
+     * IMPORTANT :
+     * On ne modifie plus le texte du bouton
+     * avant window.print().
+     *
+     * Le bouton est masqué par @media print.
+     */
+
+    window.print();
+
+}
+
+
+// ==========================================
+// BOUTON IMPRESSION
+// ==========================================
+
+boutonImprimerCompagnie.addEventListener(
+    "click",
+    imprimerCompagnie
+);
+
+
+// ==========================================
+// AFFICHER FORMULAIRE AJOUT ETUDIANT
+// ==========================================
+
+boutonAjouterEtudiantCompagnie.addEventListener(
+    "click",
+    function () {
+
+        if (!compagnieSelectionnee) {
+
+            return;
+
+        }
+
+
+        zoneAjoutEtudiantCompagnie
+            .style
+            .display =
+            "block";
+
+
+        compagnieSelectionneeFormulaire
+            .textContent =
+            compagnieSelectionnee.nom;
+
+
+        zoneAjoutEtudiantCompagnie
+            .scrollIntoView({
+                behavior:
+                    "smooth"
+            });
+
+    }
+);
+
+
+// ==========================================
+// ANNULER AJOUT ETUDIANT
+// ==========================================
+
+boutonAnnulerAjoutEtudiant.addEventListener(
+    "click",
+    function () {
+
+        zoneAjoutEtudiantCompagnie
+            .style
+            .display =
+            "none";
+
+
+        formulaireAjoutEtudiantCompagnie
+            .reset();
+
+
+        messageAjoutEtudiantCompagnie
+            .textContent =
+            "";
+
+    }
+);
+
+
+// ==========================================
+// AJOUTER UN ETUDIANT
+// ==========================================
+
+formulaireAjoutEtudiantCompagnie.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+
+        if (!compagnieSelectionnee) {
+
+            messageAjoutEtudiantCompagnie
+                .textContent =
+                "Aucune compagnie sélectionnée.";
+
+            return;
+
+        }
+
+
+        const nom =
+            document
+                .getElementById(
+                    "compagnie-etudiant-nom"
+                )
+                .value
+                .trim();
+
+
+        const prenom =
+            document
+                .getElementById(
+                    "compagnie-etudiant-prenom"
+                )
+                .value
+                .trim();
+
+
+        const numeroPrincipal =
+            document
+                .getElementById(
+                    "compagnie-etudiant-numero-principal"
+                )
+                .value
+                .replace(
+                    /\D/g,
+                    ""
+                );
+
+
+        const numeroSecondaire =
+            document
+                .getElementById(
+                    "compagnie-etudiant-numero-secondaire"
+                )
+                .value
+                .replace(
+                    /\D/g,
+                    ""
+                );
+
+
+        const email =
+            document
+                .getElementById(
+                    "compagnie-etudiant-email"
+                )
+                .value
+                .trim()
+                .toLowerCase();
+
+
+        const motDePasse =
+            document
+                .getElementById(
+                    "compagnie-etudiant-mot-de-passe"
+                )
+                .value;
+
+
+        // ==================================
+        // VERIFICATIONS
+        // ==================================
+
+        if (
+            !nom ||
+            !prenom ||
+            !numeroPrincipal ||
+            !email ||
+            !motDePasse
+        ) {
+
+            messageAjoutEtudiantCompagnie
+                .textContent =
+                "Veuillez remplir tous les champs obligatoires.";
+
+            return;
+
+        }
+
+
+        if (
+            motDePasse.length < 6
+        ) {
+
+            messageAjoutEtudiantCompagnie
+                .textContent =
+                "Le mot de passe doit contenir au moins 6 caractères.";
+
+            return;
+
+        }
+
+
+        messageAjoutEtudiantCompagnie
+            .textContent =
+            "Création du compte étudiant en cours...";
+
+
+        const boutonEnregistrer =
+            formulaireAjoutEtudiantCompagnie
+                .querySelector(
+                    'button[type="submit"]'
+                );
+
+
+        boutonEnregistrer.disabled =
+            true;
+
+
+        try {
+
+            // ==================================
+            // EDGE FUNCTION
+            // ==================================
+
+            const {
+                data,
+                error
+            } = await supabaseClient
+                .functions
+                .invoke(
+                    "creer-etudiant",
+                    {
+                        body: {
+
+                            nom:
+                                nom,
+
+                            prenom:
+                                prenom,
+
+                            compagnie_id:
+                                Number(
+                                    compagnieSelectionnee.id
+                                ),
+
+                            numero_principal:
+                                numeroPrincipal,
+
+                            numero_secondaire:
+                                numeroSecondaire ||
+                                null,
+
+                            email:
+                                email,
+
+                            mot_de_passe:
+                                motDePasse
+
+                        }
+                    }
+                );
+
+
+            if (error) {
+
+                console.error(
+                    "Erreur Edge Function :",
+                    error
+                );
+
+
+                messageAjoutEtudiantCompagnie
+                    .textContent =
+                    "Impossible de contacter le serveur.";
+
+                return;
+
+            }
+
+
+            if (
+                !data ||
+                data.success !== true
+            ) {
+
+                console.error(
+                    "Erreur création étudiant :",
+                    data
+                );
+
+
+                messageAjoutEtudiantCompagnie
+                    .textContent =
+                    data?.message ||
+                    "Impossible de créer l'étudiant.";
+
+                return;
+
+            }
+
+
+            // ==================================
+            // SUCCES
+            // ==================================
+
+            messageAjoutEtudiantCompagnie
+                .textContent =
+                "Étudiant créé avec succès.";
+
+
+            formulaireAjoutEtudiantCompagnie
+                .reset();
+
+
+            await chargerEtudiantsCompagnie();
+
+
+            await chargerCompagnies();
+
+
+            setTimeout(
+                function () {
+
+                    zoneAjoutEtudiantCompagnie
+                        .style
+                        .display =
+                        "none";
+
+
+                    messageAjoutEtudiantCompagnie
+                        .textContent =
+                        "";
+
+                },
+                1000
+            );
+
+
+        } catch (erreur) {
+
+            console.error(
+                "Erreur inattendue :",
+                erreur
+            );
+
+
+            messageAjoutEtudiantCompagnie
+                .textContent =
+                "Une erreur inattendue est survenue.";
+
+        } finally {
+
+            boutonEnregistrer.disabled =
+                false;
+
+        }
+
+    }
+);
+
+
+// ==========================================
+// AFFICHER / CACHER AJOUT COMPAGNIE
+// ==========================================
+
+boutonAjouterCompagnie.addEventListener(
+    "click",
+    function () {
+
+        if (
+            zoneAjoutCompagnie.style.display ===
+            "none"
+        ) {
+
+            zoneAjoutCompagnie.style.display =
+                "block";
+
+
+            boutonAjouterCompagnie.textContent =
+                "Annuler";
+
+        } else {
+
+            zoneAjoutCompagnie.style.display =
+                "none";
+
+
+            boutonAjouterCompagnie.textContent =
+                "Ajouter une compagnie";
+
+        }
+
+    }
+);
+
+
+// ==========================================
+// FORMULAIRE AJOUT COMPAGNIE
+// ==========================================
+
+formulaireAjoutCompagnie.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+
+        const nom =
+            document
+                .getElementById(
+                    "nom-compagnie"
+                )
+                .value
+                .trim();
+
+
+        if (!nom) {
+
+            messageAjoutCompagnie
+                .textContent =
+                "Entrez le nom de la compagnie.";
+
+            return;
+
+        }
+
+
+        messageAjoutCompagnie
+            .textContent =
+            "Ajout de la compagnie...";
+
+
+        const {
+            error
+        } = await supabaseClient
+
+            .from("compagnies")
+
+            .insert({
+
+                nom:
+                    nom
+
+            });
+
+
+        if (error) {
+
+            console.error(
+                "Erreur ajout compagnie :",
+                error
+            );
+
+
+            messageAjoutCompagnie
+                .textContent =
+                "Impossible d'ajouter la compagnie.";
+
+            return;
+
+        }
+
+
+        messageAjoutCompagnie
+            .textContent =
+            "Compagnie ajoutée avec succès.";
+
+
+        formulaireAjoutCompagnie
+            .reset();
+
+
+        await chargerCompagnies();
+
+
+        setTimeout(
+            function () {
+
+                zoneAjoutCompagnie
+                    .style
+                    .display =
+                    "none";
+
+
+                boutonAjouterCompagnie
+                    .textContent =
+                    "Ajouter une compagnie";
+
+
+                messageAjoutCompagnie
+                    .textContent =
+                    "";
+
+            },
+            800
+        );
+
+    }
+);
+
+
+// ==========================================
+// DEMARRAGE
+// ==========================================
+
+async function demarrerPage() {
+
+    const autorise =
+        await verifierAdministrateur();
+
+
+    if (!autorise) {
+
+        return;
+
+    }
+
+
+    await chargerCompagnies();
+
+}
+
+
+demarrerPage();
+
+
+</script>
+
+</body>
+
+</html>

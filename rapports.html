@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Rapports - Dr. Right</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <style>
+
+        /* =========================================
+           TABLEAU DES COMPAGNIES
+           ========================================= */
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            font-weight: bold;
+        }
+
+
+        /* =========================================
+           ACTIONS
+           ========================================= */
+
+        .zone-actions-rapport {
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+
+        /* =========================================
+           BLOC PAIEMENTS
+           ========================================= */
+
+        .resume-paiements {
+            margin-bottom: 15px;
+        }
+
+
+        .resume-paiements h3 {
+            margin-bottom: 10px;
+        }
+
+
+        .ligne-paiement {
+            margin: 6px 0;
+        }
+
+
+        .total-categorie-paiement {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #ccc;
+        }
+
+
+        .total-general-paiements {
+            margin-top: 15px;
+        }
+
+
+        /* =========================================
+           VERSION IMPRESSION
+           ========================================= */
+
+        @media print {
+
+            @page {
+                margin: 10mm;
+            }
+
+
+            body {
+                margin: 0;
+                padding: 0;
+                background: white;
+            }
+
+
+            .container {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 0;
+            }
+
+
+            /* Masquer les éléments inutiles */
+
+            .zone-actions-rapport,
+            #message-page {
+                display: none !important;
+            }
+
+
+            /* Titre principal écran */
+
+            body > .container > h1,
+            body > .container > h2:first-of-type {
+                display: none;
+            }
+
+
+            /* Eviter les grands espaces */
+
+            h1 {
+                margin-top: 0;
+                margin-bottom: 5px;
+            }
+
+
+            h2 {
+                margin-top: 12px;
+                margin-bottom: 8px;
+            }
+
+
+            h3 {
+                margin-top: 8px;
+                margin-bottom: 5px;
+            }
+
+
+            p {
+                margin-top: 4px;
+                margin-bottom: 4px;
+            }
+
+
+            /* Cartes compactes */
+
+            .carte-operation {
+                border: 1px solid #999;
+                padding: 8px;
+                margin-bottom: 8px;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+
+            /* Tableau */
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 11px;
+            }
+
+
+            th,
+            td {
+                border: 1px solid #555;
+                padding: 5px;
+            }
+
+
+            tr {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+
+            /* Titre du document */
+
+            #titre-impression {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 15px;
+            }
+
+        }
+
+
+        /* =========================================
+           TITRE CACHE SUR ECRAN
+           ========================================= */
+
+        #titre-impression {
+            display: none;
+        }
+
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <!-- ========================================= -->
+    <!-- TITRE                                      -->
+    <!-- ========================================= -->
+
+    <h1>
+        Dr. Right
+    </h1>
+
+
+    <h2>
+        Rapports
+    </h2>
+
+
+    <!-- ========================================= -->
+    <!-- MESSAGE                                    -->
+    <!-- ========================================= -->
+
+    <p id="message-page">
+        Vérification de votre accès...
+    </p>
+
+
+    <!-- ========================================= -->
+    <!-- ACTIONS                                    -->
+    <!-- ========================================= -->
+
+    <div class="zone-actions-rapport">
+
+        <a href="administrateur.html">
+
+            <button type="button">
+                Retour au tableau de bord
+            </button>
+
+        </a>
+
+
+        <button
+            type="button"
+            id="bouton-imprimer-rapport"
+        >
+            🖨️ Imprimer le rapport général
+        </button>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- TITRE IMPRESSION                           -->
+    <!-- ========================================= -->
+
+    <div id="titre-impression">
+
+        <h1>
+            Dr. Right
+        </h1>
+
+        <h2>
+            Rapport général
+        </h2>
+
+        <p id="date-impression"></p>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- RAPPORT GENERAL                            -->
+    <!-- ========================================= -->
+
+    <h2>
+        Rapport général
+    </h2>
+
+
+    <div id="rapport-general">
+
+        Chargement du rapport...
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- RAPPORT PAIEMENTS                          -->
+    <!-- ========================================= -->
+
+    <h2>
+        Paiements
+    </h2>
+
+
+    <div id="rapport-paiements">
+
+        Chargement...
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- RAPPORT COMPAGNIES                         -->
+    <!-- ========================================= -->
+
+    <h2>
+        Rapport par compagnie
+    </h2>
+
+
+    <div id="rapport-compagnies">
+
+        Chargement...
+
+    </div>
+
+
+</div>
+
+
+<!-- ========================================= -->
+<!-- SUPABASE                                   -->
+<!-- ========================================= -->
+
+
+
+<script>
+
+// ==========================================
+// ELEMENTS
+// ==========================================
+
+const messagePage =
+    document.getElementById(
+        "message-page"
+    );
+
+
+const rapportGeneral =
+    document.getElementById(
+        "rapport-general"
+    );
+
+
+const rapportPaiements =
+    document.getElementById(
+        "rapport-paiements"
+    );
+
+
+const rapportCompagnies =
+    document.getElementById(
+        "rapport-compagnies"
+    );
+
+
+const boutonImprimerRapport =
+    document.getElementById(
+        "bouton-imprimer-rapport"
+    );
+
+
+const dateImpression =
+    document.getElementById(
+        "date-impression"
+    );
+
+
+// ==========================================
+// DONNEES
+// ==========================================
+
+let tousLesEtudiants = [];
+
+let tousLesPaiements = [];
+
+let toutesLesCompagnies = [];
+
+
+// ==========================================
+// VERIFIER ADMINISTRATEUR
+// ==========================================
+
+async function verifierAdministrateur() {
+
+    messagePage.textContent =
+        "Vérification de votre accès...";
+
+
+    const {
+        data: sessionData,
+        error: sessionError
+    } = await supabaseClient
+        .auth
+        .getSession();
+
+
+    if (
+        sessionError ||
+        !sessionData.session
+    ) {
+
+        window.location.href =
+            "./connexion-administrateur.html";
+
+        return false;
+    }
+
+
+    const session =
+        sessionData.session;
+
+
+    const {
+        data: administrateur,
+        error
+    } = await supabaseClient
+
+        .from("administrateurs")
+
+        .select(
+            "id, prenom, nom"
+        )
+
+        .eq(
+            "auth_user_id",
+            session.user.id
+        )
+
+        .eq(
+            "statut",
+            "actif"
+        )
+
+        .maybeSingle();
+
+
+    if (
+        error ||
+        !administrateur
+    ) {
+
+        await supabaseClient
+            .auth
+            .signOut();
+
+
+        window.location.href =
+            "./connexion-administrateur.html";
+
+        return false;
+    }
+
+
+    messagePage.textContent =
+        `Connecté : ${administrateur.prenom || ""} ${administrateur.nom || ""}`;
+
+
+    return true;
+}
+
+
+// ==========================================
+// CHARGER ETUDIANTS
+// ==========================================
+
+async function chargerEtudiants() {
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("etudiants")
+
+        .select(`
+            id,
+            nom,
+            prenom,
+            compagnie_id,
+            dette_jus,
+            dette_manger,
+            statut
+        `);
+
+
+    if (error) {
+
+        console.error(
+            "Erreur chargement étudiants :",
+            error
+        );
+
+
+        throw new Error(
+            "Impossible de charger les étudiants."
+        );
+
+    }
+
+
+    tousLesEtudiants =
+        data || [];
+
+}
+
+
+// ==========================================
+// CHARGER PAIEMENTS
+// ==========================================
+
+async function chargerPaiements() {
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("paiements")
+
+        .select(`
+            id,
+            created_at,
+            etudiant_id,
+            categorie,
+            montant,
+            moyen_paiement,
+            admin_id
+        `);
+
+
+    if (error) {
+
+        console.error(
+            "Erreur chargement paiements :",
+            error
+        );
+
+
+        throw new Error(
+            "Impossible de charger les paiements."
+        );
+
+    }
+
+
+    tousLesPaiements =
+        data || [];
+
+}
+
+
+// ==========================================
+// CHARGER COMPAGNIES
+// ==========================================
+
+async function chargerCompagnies() {
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("compagnies")
+
+        .select(`
+            id,
+            nom
+        `);
+
+
+    if (error) {
+
+        console.error(
+            "Erreur chargement compagnies :",
+            error
+        );
+
+
+        throw new Error(
+            "Impossible de charger les compagnies."
+        );
+
+    }
+
+
+    toutesLesCompagnies =
+        data || [];
+
+}
+
+
+// ==========================================
+// NOMBRE
+// ==========================================
+
+function nombre(valeur) {
+
+    const resultat =
+        Number(valeur);
+
+
+    return Number.isFinite(resultat)
+        ? resultat
+        : 0;
+
+}
+
+
+// ==========================================
+// FORMAT MONTANT
+// ==========================================
+
+function formaterMontant(valeur) {
+
+    return (
+        nombre(valeur)
+        .toLocaleString(
+            "fr-FR",
+            {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            }
+        )
+        + " FCFA"
+    );
+
+}
+
+
+// ==========================================
+// DETTE TOTALE ETUDIANT
+// ==========================================
+
+function detteTotaleEtudiant(
+    etudiant
+) {
+
+    return (
+        nombre(etudiant.dette_jus)
+        +
+        nombre(etudiant.dette_manger)
+    );
+
+}
+
+
+// ==========================================
+// RAPPORT GENERAL
+// ==========================================
+
+function afficherRapportGeneral() {
+
+
+    const nombreEtudiants =
+        tousLesEtudiants.length;
+
+
+    const nombreEtudiantsEndettes =
+        tousLesEtudiants.filter(
+            function (etudiant) {
+
+                return (
+                    detteTotaleEtudiant(
+                        etudiant
+                    ) > 0
+                );
+
+            }
+        ).length;
+
+
+    const detteTotaleJus =
+        tousLesEtudiants.reduce(
+            function (total, etudiant) {
+
+                return (
+                    total +
+                    nombre(
+                        etudiant.dette_jus
+                    )
+                );
+
+            },
+            0
+        );
+
+
+    const detteTotaleManger =
+        tousLesEtudiants.reduce(
+            function (total, etudiant) {
+
+                return (
+                    total +
+                    nombre(
+                        etudiant.dette_manger
+                    )
+                );
+
+            },
+            0
+        );
+
+
+    const detteTotale =
+        detteTotaleJus +
+        detteTotaleManger;
+
+
+    rapportGeneral.innerHTML = `
+
+        <div class="carte-operation">
+
+            <h3>
+                Étudiants
+            </h3>
+
+            <p>
+                <strong>
+                    Nombre total :
+                </strong>
+                ${nombreEtudiants}
+            </p>
+
+            <p>
+                <strong>
+                    Étudiants ayant une dette :
+                </strong>
+                ${nombreEtudiantsEndettes}
+            </p>
+
+        </div>
+
+
+        <div class="carte-operation">
+
+            <h3>
+                Dettes
+            </h3>
+
+            <p>
+                <strong>
+                    Dette totale Jus :
+                </strong>
+                ${formaterMontant(
+                    detteTotaleJus
+                )}
+            </p>
+
+            <p>
+                <strong>
+                    Dette totale Manger :
+                </strong>
+                ${formaterMontant(
+                    detteTotaleManger
+                )}
+            </p>
+
+            <p>
+                <strong>
+                    Dette totale générale :
+                </strong>
+                ${formaterMontant(
+                    detteTotale
+                )}
+            </p>
+
+        </div>
+
+    `;
+
+}
+
+
+// ==========================================
+// NORMALISER CATEGORIE
+// ==========================================
+
+function normaliserCategorie(
+    categorie
+) {
+
+    return String(
+        categorie || ""
+    )
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(
+            /[\u0300-\u036f]/g,
+            ""
+        );
+
+}
+
+
+// ==========================================
+// NORMALISER MOYEN DE PAIEMENT
+// ==========================================
+
+function normaliserMoyenPaiement(
+    moyen
+) {
+
+    return String(
+        moyen || ""
+    )
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(
+            /[\u0300-\u036f]/g,
+            ""
+        );
+
+}
+
+
+// ==========================================
+// IDENTIFIER LA CATEGORIE
+// ==========================================
+
+function obtenirCategoriePaiement(
+    categorie
+) {
+
+    const valeur =
+        normaliserCategorie(
+            categorie
+        );
+
+
+    if (
+        valeur === "jus"
+    ) {
+
+        return "Jus";
+
+    }
+
+
+    if (
+        valeur === "manger"
+    ) {
+
+        return "Manger";
+
+    }
+
+
+    return null;
+
+}
+
+
+// ==========================================
+// IDENTIFIER LE MOYEN
+// ==========================================
+
+function obtenirMoyenPaiement(
+    moyenPaiement
+) {
+
+    const moyen =
+        normaliserMoyenPaiement(
+            moyenPaiement
+        );
+
+
+    if (
+        moyen === "espece" ||
+        moyen === "especes" ||
+        moyen === "cash"
+    ) {
+
+        return "Espèces";
+
+    }
+
+
+    if (
+        moyen === "mixx" ||
+        moyen === "mixx by yas" ||
+        moyen === "mixx by yass"
+    ) {
+
+        return "Mixx by Yas";
+
+    }
+
+
+    if (
+        moyen === "moov" ||
+        moyen === "moov money" ||
+        moyen === "flooz"
+    ) {
+
+        return "Moov Money";
+
+    }
+
+
+    return null;
+
+}
+
+
+// ==========================================
+// CALCULER LES PAIEMENTS
+// PAR CATEGORIE
+// ==========================================
+
+function calculerPaiementsParCategorie() {
+
+
+    const resultats = {
+
+        Jus: {
+
+            "Espèces": 0,
+
+            "Mixx by Yas": 0,
+
+            "Moov Money": 0,
+
+            total: 0
+
+        },
+
+        Manger: {
+
+            "Espèces": 0,
+
+            "Mixx by Yas": 0,
+
+            "Moov Money": 0,
+
+            total: 0
+
+        }
+
+    };
+
+
+    tousLesPaiements.forEach(
+        function (paiement) {
+
+
+            const categorie =
+                obtenirCategoriePaiement(
+                    paiement.categorie
+                );
+
+
+            const moyen =
+                obtenirMoyenPaiement(
+                    paiement.moyen_paiement
+                );
+
+
+            const montant =
+                nombre(
+                    paiement.montant
+                );
+
+
+            if (
+                !categorie ||
+                !moyen
+            ) {
+
+                return;
+
+            }
+
+
+            resultats[categorie][moyen] +=
+                montant;
+
+
+            resultats[categorie].total +=
+                montant;
+
+        }
+    );
+
+
+    return resultats;
+
+}
+
+
+// ==========================================
+// AFFICHER PAIEMENTS
+// ==========================================
+
+function afficherPaiementsParCategorie() {
+
+
+    const paiements =
+        calculerPaiementsParCategorie();
+
+
+    const totalGeneral =
+        paiements.Jus.total +
+        paiements.Manger.total;
+
+
+    rapportPaiements.innerHTML = `
+
+
+        <!-- ================================ -->
+        <!-- PAIEMENTS JUS                    -->
+        <!-- ================================ -->
+
+        <div
+            class="carte-operation resume-paiements"
+        >
+
+            <h3>
+                🧃 Paiements — Jus
+            </h3>
+
+
+            <p class="ligne-paiement">
+
+                <strong>
+                    Espèces :
+                </strong>
+
+                ${formaterMontant(
+                    paiements.Jus["Espèces"]
+                )}
+
+            </p>
+
+
+            <p class="ligne-paiement">
+
+                <strong>
+                    Mixx by Yas :
+                </strong>
+
+                ${formaterMontant(
+                    paiements.Jus["Mixx by Yas"]
+                )}
+
+            </p>
+
+
+            <p class="ligne-paiement">
+
+                <strong>
+                    Moov Money :
+                </strong>
+
+                ${formaterMontant(
+                    paiements.Jus["Moov Money"]
+                )}
+
+            </p>
+
+
+            <p
+                class="
+                    total-categorie-paiement
+                "
+            >
+
+                <strong>
+                    Total paiements Jus :
+                </strong>
+
+                ${formaterMontant(
+                    paiements.Jus.total
+                )}
+
+            </p>
+
+        </div>
+
+
+        <!-- ================================ -->
+        <!-- PAIEMENTS MANGER                 -->
+        <!-- ================================ -->
+
+        <div
+            class="carte-operation resume-paiements"
+        >
+
+            <h3>
+                🍽️ Paiements — Manger
+            </h3>
+
+
+            <p class="ligne-paiement">
+
+                <strong>
+                    Espèces :
+                </strong>
+
+                ${formaterMontant(
+                    paiements.Manger["Espèces"]
+                )}
+
+            </p>
+
+
+            <p class="ligne-paiement">
+
+                <strong>
+                    Mixx by Yas :
+                </strong>
+
+                ${formaterMontant(
+                    paiements.Manger["Mixx by Yas"]
+                )}
+
+            </p>
+
+
+            <p class="ligne-paiement">
+
+                <strong>
+                    Moov Money :
+                </strong>
+
+                ${formaterMontant(
+                    paiements.Manger["Moov Money"]
+                )}
+
+            </p>
+
+
+            <p
+                class="
+                    total-categorie-paiement
+                "
+            >
+
+                <strong>
+                    Total paiements Manger :
+                </strong>
+
+                ${formaterMontant(
+                    paiements.Manger.total
+                )}
+
+            </p>
+
+        </div>
+
+
+        <!-- ================================ -->
+        <!-- TOTAL GENERAL                     -->
+        <!-- ================================ -->
+
+        <div
+            class="
+                carte-operation
+                total-general-paiements
+            "
+        >
+
+            <h3>
+                💰 Total général des paiements
+            </h3>
+
+
+            <p>
+
+                <strong>
+                    Jus :
+                </strong>
+
+                ${formaterMontant(
+                    paiements.Jus.total
+                )}
+
+            </p>
+
+
+            <p>
+
+                <strong>
+                    Manger :
+                </strong>
+
+                ${formaterMontant(
+                    paiements.Manger.total
+                )}
+
+            </p>
+
+
+            <p>
+
+                <strong>
+                    Total général :
+                </strong>
+
+                ${formaterMontant(
+                    totalGeneral
+                )}
+
+            </p>
+
+        </div>
+
+    `;
+
+}
+
+
+// ==========================================
+// RAPPORT COMPAGNIES
+// ==========================================
+
+function afficherRapportCompagnies() {
+
+
+    if (
+        toutesLesCompagnies.length === 0
+    ) {
+
+        rapportCompagnies.innerHTML =
+            "<p>Aucune compagnie enregistrée.</p>";
+
+        return;
+    }
+
+
+    const rapports =
+        toutesLesCompagnies.map(
+            function (compagnie) {
+
+
+                const etudiants =
+                    tousLesEtudiants.filter(
+                        function (etudiant) {
+
+                            return (
+                                Number(
+                                    etudiant.compagnie_id
+                                ) ===
+                                Number(
+                                    compagnie.id
+                                )
+                            );
+
+                        }
+                    );
+
+
+                const detteJus =
+                    etudiants.reduce(
+                        function (
+                            total,
+                            etudiant
+                        ) {
+
+                            return (
+                                total +
+                                nombre(
+                                    etudiant.dette_jus
+                                )
+                            );
+
+                        },
+                        0
+                    );
+
+
+                const detteManger =
+                    etudiants.reduce(
+                        function (
+                            total,
+                            etudiant
+                        ) {
+
+                            return (
+                                total +
+                                nombre(
+                                    etudiant.dette_manger
+                                )
+                            );
+
+                        },
+                        0
+                    );
+
+
+                return {
+
+                    nom:
+                        compagnie.nom ||
+                        "Sans nom",
+
+                    nombreEtudiants:
+                        etudiants.length,
+
+                    detteJus:
+                        detteJus,
+
+                    detteManger:
+                        detteManger,
+
+                    detteTotale:
+                        detteJus +
+                        detteManger
+
+                };
+
+            }
+        );
+
+
+    rapports.sort(
+        function (a, b) {
+
+            return (
+                b.detteTotale -
+                a.detteTotale
+            );
+
+        }
+    );
+
+
+    let html = `
+
+        <div style="overflow-x: auto;">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>#</th>
+
+                        <th>Compagnie</th>
+
+                        <th>Étudiants</th>
+
+                        <th>Dette Jus</th>
+
+                        <th>Dette Manger</th>
+
+                        <th>Dette totale</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+    `;
+
+
+    rapports.forEach(
+        function (
+            rapport,
+            index
+        ) {
+
+            html += `
+
+                <tr>
+
+                    <td>
+                        ${index + 1}
+                    </td>
+
+                    <td>
+                        ${rapport.nom}
+                    </td>
+
+                    <td>
+                        ${rapport.nombreEtudiants}
+                    </td>
+
+                    <td>
+                        ${formaterMontant(
+                            rapport.detteJus
+                        )}
+                    </td>
+
+                    <td>
+                        ${formaterMontant(
+                            rapport.detteManger
+                        )}
+                    </td>
+
+                    <td>
+
+                        <strong>
+
+                            ${formaterMontant(
+                                rapport.detteTotale
+                            )}
+
+                        </strong>
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }
+    );
+
+
+    html += `
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    `;
+
+
+    rapportCompagnies.innerHTML =
+        html;
+
+}
+
+
+// ==========================================
+// DATE D'IMPRESSION
+// ==========================================
+
+function preparerDateImpression() {
+
+
+    const maintenant =
+        new Date();
+
+
+    dateImpression.textContent =
+        "Date du rapport : " +
+        maintenant.toLocaleDateString(
+            "fr-FR"
+        ) +
+        " à " +
+        maintenant.toLocaleTimeString(
+            "fr-FR",
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+}
+
+
+// ==========================================
+// IMPRIMER
+// ==========================================
+
+function imprimerRapport() {
+
+
+    preparerDateImpression();
+
+
+    boutonImprimerRapport.disabled =
+        true;
+
+
+    boutonImprimerRapport.textContent =
+        "Préparation de l'impression...";
+
+
+    setTimeout(
+        function () {
+
+
+            window.print();
+
+
+            boutonImprimerRapport.disabled =
+                false;
+
+
+            boutonImprimerRapport.textContent =
+                "🖨️ Imprimer le rapport général";
+
+
+        },
+        300
+    );
+
+}
+
+
+// ==========================================
+// BOUTON IMPRIMER
+// ==========================================
+
+boutonImprimerRapport.addEventListener(
+    "click",
+    imprimerRapport
+);
+
+
+// ==========================================
+// CHARGER LE RAPPORT
+// ==========================================
+
+async function chargerRapport() {
+
+
+    rapportGeneral.innerHTML =
+        "Chargement...";
+
+
+    rapportPaiements.innerHTML =
+        "Chargement...";
+
+
+    rapportCompagnies.innerHTML =
+        "Chargement...";
+
+
+    try {
+
+
+        await Promise.all([
+
+            chargerEtudiants(),
+
+            chargerPaiements(),
+
+            chargerCompagnies()
+
+        ]);
+
+
+        afficherRapportGeneral();
+
+        afficherPaiementsParCategorie();
+
+        afficherRapportCompagnies();
+
+
+        messagePage.textContent =
+            "Rapport chargé avec succès.";
+
+
+    } catch (erreur) {
+
+
+        console.error(
+            "Erreur chargement rapport :",
+            erreur
+        );
+
+
+        messagePage.textContent =
+            "Impossible de charger le rapport.";
+
+
+        rapportGeneral.innerHTML =
+            "<p>Une erreur est survenue.</p>";
+
+
+        rapportPaiements.innerHTML =
+            "";
+
+
+        rapportCompagnies.innerHTML =
+            "";
+
+    }
+
+}
+
+
+// ==========================================
+// DEMARRAGE
+// ==========================================
+
+async function demarrerPage() {
+
+
+    const autorise =
+        await verifierAdministrateur();
+
+
+    if (!autorise) {
+
+        return;
+
+    }
+
+
+    await chargerRapport();
+
+}
+
+
+demarrerPage();
+
+
+</script>
+
+</body>
+
+</html>

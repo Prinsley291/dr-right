@@ -1,0 +1,3182 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Gestion des étudiants - Dr. Right</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <style>
+
+        /* =========================================
+           FICHE D'IMPRESSION
+           ========================================= */
+
+        #zone-impression-etudiant {
+
+            display: none;
+
+        }
+
+
+        /* =========================================
+           VERSION IMPRESSION
+           ========================================= */
+
+        @media print {
+
+            @page {
+
+                size: A4;
+                margin: 10mm;
+
+            }
+
+
+            body {
+
+                margin: 0;
+                padding: 0;
+                background: white;
+
+            }
+
+
+            body > .container {
+
+                display: none !important;
+
+            }
+
+
+            #zone-impression-etudiant {
+
+                display: block !important;
+
+                width: 100%;
+
+                color: #000;
+
+                background: #fff;
+
+                font-family:
+                    Arial,
+                    Helvetica,
+                    sans-serif;
+
+            }
+
+
+            .fiche-entete {
+
+                text-align: center;
+
+                border-bottom:
+                    2px solid #000;
+
+                padding-bottom: 10px;
+
+                margin-bottom: 15px;
+
+            }
+
+
+            .fiche-entete h1 {
+
+                margin: 0 0 5px 0;
+
+                font-size: 22px;
+
+            }
+
+
+            .fiche-entete h2 {
+
+                margin: 0 0 5px 0;
+
+                font-size: 17px;
+
+            }
+
+
+            .fiche-entete p {
+
+                margin: 3px 0;
+
+                font-size: 10px;
+
+            }
+
+
+            .fiche-section {
+
+                margin-bottom: 15px;
+
+            }
+
+
+            .fiche-section h3 {
+
+                margin: 0 0 7px 0;
+
+                padding: 5px 7px;
+
+                border:
+                    1px solid #000;
+
+                background:
+                    #eeeeee;
+
+                font-size: 13px;
+
+            }
+
+
+            .fiche-identite {
+
+                display: grid;
+
+                grid-template-columns:
+                    1fr 1fr;
+
+                gap: 5px 20px;
+
+                font-size: 11px;
+
+            }
+
+
+            .fiche-identite p {
+
+                margin: 3px 0;
+
+            }
+
+
+            .fiche-table {
+
+                width: 100%;
+
+                border-collapse: collapse;
+
+                font-size: 9px;
+
+                margin-top: 5px;
+
+            }
+
+
+            .fiche-table th,
+            .fiche-table td {
+
+                border:
+                    1px solid #555;
+
+                padding: 4px;
+
+                text-align: left;
+
+                vertical-align: top;
+
+            }
+
+
+            .fiche-table th {
+
+                font-weight: bold;
+
+                background:
+                    #eeeeee;
+
+            }
+
+
+            .fiche-table .montant {
+
+                text-align: right;
+
+                white-space: nowrap;
+
+            }
+
+
+            .resume-financier {
+
+                width: 100%;
+
+                border-collapse: collapse;
+
+                font-size: 11px;
+
+            }
+
+
+            .resume-financier td {
+
+                border:
+                    1px solid #555;
+
+                padding: 6px;
+
+            }
+
+
+            .resume-financier td:last-child {
+
+                text-align: right;
+
+                font-weight: bold;
+
+            }
+
+
+            .resume-total {
+
+                font-size: 13px;
+
+                font-weight: bold;
+
+            }
+
+
+            .fiche-pied {
+
+                margin-top: 20px;
+
+                padding-top: 8px;
+
+                border-top:
+                    1px solid #000;
+
+                text-align: center;
+
+                font-size: 9px;
+
+            }
+
+
+            .aucune-donnee {
+
+                font-size: 10px;
+
+                font-style: italic;
+
+                margin: 5px 0;
+
+            }
+
+
+            table {
+
+                page-break-inside: auto;
+
+            }
+
+
+            tr {
+
+                page-break-inside: avoid;
+
+                break-inside: avoid;
+
+            }
+
+
+            .fiche-section {
+
+                page-break-inside: auto;
+
+            }
+
+        }
+
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+    <h1>Dr. Right</h1>
+
+    <h2>Gestion des étudiants</h2>
+
+
+    <!-- MESSAGE GENERAL -->
+
+    <p id="message-page">
+        Vérification de votre accès...
+    </p>
+
+
+    <!-- ========================================= -->
+    <!-- AJOUT D'UN ETUDIANT                       -->
+    <!-- ========================================= -->
+
+    <button
+        id="bouton-afficher-formulaire"
+        type="button"
+    >
+        Ajouter un étudiant
+    </button>
+
+
+    <div
+        id="zone-formulaire-etudiant"
+        style="display: none;"
+    >
+
+        <h3>Nouvel étudiant</h3>
+
+
+        <form id="form-ajout-etudiant">
+
+            <input
+                id="nom-etudiant"
+                type="text"
+                placeholder="Nom"
+                required
+            >
+
+
+            <input
+                id="prenom-etudiant"
+                type="text"
+                placeholder="Prénom"
+                required
+            >
+
+
+            <input
+                id="numero-principal-etudiant"
+                type="tel"
+                placeholder="Numéro principal"
+                required
+            >
+
+
+            <input
+                id="numero-secondaire-etudiant"
+                type="tel"
+                placeholder="Numéro secondaire (facultatif)"
+            >
+
+
+            <select
+                id="compagnie-etudiant"
+                required
+            >
+
+                <option value="">
+                    Chargement des compagnies...
+                </option>
+
+            </select>
+
+
+            <input
+                id="email-etudiant"
+                type="email"
+                placeholder="Email de connexion"
+                autocomplete="off"
+                required
+            >
+
+
+            <input
+                id="mot-de-passe-etudiant"
+                type="password"
+                placeholder="Mot de passe"
+                autocomplete="new-password"
+                minlength="6"
+                required
+            >
+
+
+            <button type="submit">
+                Enregistrer l'étudiant
+            </button>
+
+        </form>
+
+
+        <p id="message-ajout-etudiant"></p>
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- RECHERCHE                                 -->
+    <!-- ========================================= -->
+
+    <div id="zone-recherche-etudiant">
+
+        <input
+            type="search"
+            id="recherche-etudiant"
+            placeholder="Rechercher par nom, prénom ou numéro"
+        >
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- LISTE DES ETUDIANTS                       -->
+    <!-- ========================================= -->
+
+    <div id="liste-etudiants">
+
+        Chargement des étudiants...
+
+    </div>
+
+
+    <br>
+
+
+    <!-- ========================================= -->
+    <!-- RETOUR                                    -->
+    <!-- ========================================= -->
+
+    <a href="administrateur.html">
+
+        <button type="button">
+            Retour au tableau de bord
+        </button>
+
+    </a>
+
+</div>
+
+
+<!-- ========================================= -->
+<!-- ZONE SPECIALE D'IMPRESSION                -->
+<!-- ========================================= -->
+
+<div id="zone-impression-etudiant">
+
+    <!-- Contenu créé automatiquement par JavaScript -->
+
+</div>
+
+
+<!-- ========================================= -->
+<!-- SUPABASE                                   -->
+<!-- ========================================= -->
+
+
+
+<script>
+
+// ==========================================
+// ELEMENTS DE LA PAGE
+// ==========================================
+
+const messagePage =
+    document.getElementById(
+        "message-page"
+    );
+
+
+const listeEtudiants =
+    document.getElementById(
+        "liste-etudiants"
+    );
+
+
+const rechercheEtudiant =
+    document.getElementById(
+        "recherche-etudiant"
+    );
+
+
+const zoneRechercheEtudiant =
+    document.getElementById(
+        "zone-recherche-etudiant"
+    );
+
+
+const boutonAfficherFormulaire =
+    document.getElementById(
+        "bouton-afficher-formulaire"
+    );
+
+
+const zoneFormulaireEtudiant =
+    document.getElementById(
+        "zone-formulaire-etudiant"
+    );
+
+
+const formulaireAjoutEtudiant =
+    document.getElementById(
+        "form-ajout-etudiant"
+    );
+
+
+const messageAjoutEtudiant =
+    document.getElementById(
+        "message-ajout-etudiant"
+    );
+
+
+const selectCompagnie =
+    document.getElementById(
+        "compagnie-etudiant"
+    );
+
+
+const zoneImpressionEtudiant =
+    document.getElementById(
+        "zone-impression-etudiant"
+    );
+
+
+// ==========================================
+// DONNEES LOCALES
+// ==========================================
+
+let tousLesEtudiants = [];
+
+let toutesLesCompagnies = [];
+
+
+// ==========================================
+// FORMATER UN MONTANT
+// ==========================================
+
+function formaterMontant(montant) {
+
+    const valeur =
+        Number(montant || 0);
+
+
+    return valeur.toLocaleString(
+        "fr-FR"
+    ) + " FCFA";
+
+}
+
+
+// ==========================================
+// FORMATER UNE DATE
+// ==========================================
+
+function formaterDate(date) {
+
+    if (!date) {
+
+        return "Non renseignée";
+
+    }
+
+
+    const objetDate =
+        new Date(date);
+
+
+    if (
+        Number.isNaN(
+            objetDate.getTime()
+        )
+    ) {
+
+        return "Date invalide";
+
+    }
+
+
+    return objetDate.toLocaleDateString(
+        "fr-FR"
+    )
+    +
+    " "
+    +
+    objetDate.toLocaleTimeString(
+        "fr-FR",
+        {
+            hour: "2-digit",
+            minute: "2-digit"
+        }
+    );
+
+}
+
+
+// ==========================================
+// SECURISER UNE VALEUR POUR HTML
+// ==========================================
+
+function echapperHTML(valeur) {
+
+    return String(
+        valeur ?? ""
+    )
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+    .replace(
+        /</g,
+        "&lt;"
+    )
+    .replace(
+        />/g,
+        "&gt;"
+    )
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+    .replace(
+        /'/g,
+        "&#039;"
+    );
+
+}
+
+
+// ==========================================
+// VERIFIER L'ACCES ADMINISTRATEUR
+// ==========================================
+
+async function verifierAdministrateur() {
+
+    messagePage.textContent =
+        "Vérification de votre accès...";
+
+
+    const {
+        data: sessionData,
+        error: sessionError
+    } = await supabaseClient
+        .auth
+        .getSession();
+
+
+    if (sessionError) {
+
+        window.location.href =
+            "./connexion-administrateur.html";
+
+        return false;
+
+    }
+
+
+    const session =
+        sessionData.session;
+
+
+    if (!session) {
+
+        window.location.href =
+            "./connexion-administrateur.html";
+
+        return false;
+
+    }
+
+
+    const {
+        data: administrateur,
+        error: erreurAdministrateur
+    } = await supabaseClient
+
+        .from("administrateurs")
+
+        .select("id")
+
+        .eq(
+            "auth_user_id",
+            session.user.id
+        )
+
+        .eq(
+            "statut",
+            "actif"
+        )
+
+        .maybeSingle();
+
+
+    if (
+        erreurAdministrateur ||
+        !administrateur
+    ) {
+
+        await supabaseClient
+            .auth
+            .signOut();
+
+
+        window.location.href =
+            "./connexion-administrateur.html";
+
+        return false;
+
+    }
+
+
+    return true;
+
+}
+
+
+// ==========================================
+// CHARGER LES COMPAGNIES
+// ==========================================
+
+async function chargerCompagnies() {
+
+    selectCompagnie.innerHTML =
+        '<option value="">Chargement...</option>';
+
+
+    const {
+        data: compagnies,
+        error
+    } = await supabaseClient
+
+        .from("compagnies")
+
+        .select("*")
+
+        .order(
+            "nom",
+            {
+                ascending: true
+            }
+        );
+
+
+    if (error) {
+
+        console.error(
+            "Erreur chargement compagnies :",
+            error
+        );
+
+
+        selectCompagnie.innerHTML =
+            '<option value="">Impossible de charger les compagnies</option>';
+
+
+        return;
+
+    }
+
+
+    toutesLesCompagnies =
+        compagnies || [];
+
+
+    selectCompagnie.innerHTML =
+        '<option value="">-- Choisir une compagnie --</option>';
+
+
+    toutesLesCompagnies.forEach(
+        function (compagnie) {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+
+            option.value =
+                compagnie.id;
+
+
+            option.textContent =
+                compagnie.nom;
+
+
+            selectCompagnie.appendChild(
+                option
+            );
+
+        }
+    );
+
+}
+
+
+// ==========================================
+// CHARGER LES ETUDIANTS
+// ==========================================
+
+async function chargerEtudiants() {
+
+    listeEtudiants.innerHTML =
+        "Chargement des étudiants...";
+
+
+    const {
+        data: etudiants,
+        error
+    } = await supabaseClient
+
+        .from("etudiants")
+
+        .select(`
+            *,
+            compagnies (
+                id,
+                nom
+            )
+        `)
+
+        .order(
+            "nom",
+            {
+                ascending: true
+            }
+        );
+
+
+    if (error) {
+
+        console.error(
+            "Erreur chargement étudiants :",
+            error
+        );
+
+
+        messagePage.textContent =
+            "Impossible de charger les étudiants.";
+
+
+        listeEtudiants.innerHTML =
+            "Une erreur est survenue.";
+
+
+        return;
+
+    }
+
+
+    tousLesEtudiants =
+        etudiants || [];
+
+
+    if (
+        tousLesEtudiants.length === 0
+    ) {
+
+        zoneRechercheEtudiant.style.display =
+            "none";
+
+
+        messagePage.textContent =
+            "Aucun étudiant enregistré.";
+
+    } else {
+
+        zoneRechercheEtudiant.style.display =
+            "block";
+
+
+        messagePage.textContent =
+            `${tousLesEtudiants.length} étudiant(s) enregistré(s).`;
+
+    }
+
+
+    afficherEtudiants(
+        tousLesEtudiants
+    );
+
+}
+
+
+// ==========================================
+// AFFICHER LES ETUDIANTS
+// ==========================================
+
+function afficherEtudiants(etudiants) {
+
+    listeEtudiants.innerHTML = "";
+
+
+    if (
+        !etudiants ||
+        etudiants.length === 0
+    ) {
+
+        listeEtudiants.innerHTML =
+            "<p>Aucun étudiant enregistré pour le moment.</p>";
+
+        return;
+
+    }
+
+
+    etudiants.forEach(
+        function (etudiant) {
+
+
+            const carte =
+                document.createElement(
+                    "div"
+                );
+
+
+            carte.className =
+                "carte-etudiant";
+
+
+            const nomComplet =
+                `${etudiant.prenom || ""} ${etudiant.nom || ""}`
+                .trim();
+
+
+            const compagnie =
+                etudiant.compagnies
+                    ? etudiant.compagnies.nom
+                    : "Non renseignée";
+
+
+            const numeroPrincipal =
+                etudiant.numero_principal ||
+                "Non renseigné";
+
+
+            const numeroSecondaire =
+                etudiant.numero_secondaire ||
+                "Non renseigné";
+
+
+            const statut =
+                etudiant.statut ||
+                "Non renseigné";
+
+
+            const detteJus =
+                Number(
+                    etudiant.dette_jus || 0
+                );
+
+
+            const detteManger =
+                Number(
+                    etudiant.dette_manger || 0
+                );
+
+
+            const detteTotale =
+                detteJus +
+                detteManger;
+
+
+            carte.innerHTML = `
+
+                <h3>
+                    ${echapperHTML(nomComplet)}
+                </h3>
+
+
+                <p>
+                    <strong>Compagnie :</strong>
+                    ${echapperHTML(compagnie)}
+                </p>
+
+
+                <p>
+                    <strong>Numéro principal :</strong>
+                    ${echapperHTML(numeroPrincipal)}
+                </p>
+
+
+                <p>
+                    <strong>Numéro secondaire :</strong>
+                    ${echapperHTML(numeroSecondaire)}
+                </p>
+
+
+                <p>
+                    <strong>Dette jus :</strong>
+                    ${formaterMontant(detteJus)}
+                </p>
+
+
+                <p>
+                    <strong>Dette manger :</strong>
+                    ${formaterMontant(detteManger)}
+                </p>
+
+
+                <p>
+                    <strong>Dette totale :</strong>
+                    ${formaterMontant(detteTotale)}
+                </p>
+
+
+                <p>
+                    <strong>Statut :</strong>
+                    ${echapperHTML(statut)}
+                </p>
+
+
+                <!-- BOUTON MODIFIER -->
+
+                <button
+                    type="button"
+                    class="bouton-modifier-etudiant"
+                >
+                    Modifier
+                </button>
+
+
+                <!-- BOUTON IMPRIMER -->
+
+                <button
+                    type="button"
+                    class="bouton-imprimer-fiche"
+                >
+                    🖨️ Imprimer la fiche
+                </button>
+
+
+                <!-- BOUTON SUPPRIMER -->
+
+                <button
+                    type="button"
+                    class="bouton-supprimer-etudiant"
+                >
+                    Supprimer définitivement
+                </button>
+
+
+                <p
+                    class="message-suppression"
+                ></p>
+
+
+                <!-- ZONE MODIFICATION -->
+
+                <div
+                    class="zone-modification-etudiant"
+                    style="display: none;"
+                >
+
+                    <h4>
+                        Modifier cet étudiant
+                    </h4>
+
+
+                    <form
+                        class="form-modification-etudiant"
+                    >
+
+                        <input
+                            class="modification-nom"
+                            type="text"
+                            value="${echapperHTML(etudiant.nom || "")}"
+                            required
+                        >
+
+
+                        <input
+                            class="modification-prenom"
+                            type="text"
+                            value="${echapperHTML(etudiant.prenom || "")}"
+                            required
+                        >
+
+
+                        <input
+                            class="modification-numero-principal"
+                            type="tel"
+                            value="${echapperHTML(etudiant.numero_principal || "")}"
+                            required
+                        >
+
+
+                        <input
+                            class="modification-numero-secondaire"
+                            type="tel"
+                            value="${echapperHTML(etudiant.numero_secondaire || "")}"
+                        >
+
+
+                        <select
+                            class="modification-compagnie"
+                            required
+                        >
+
+                            ${creerOptionsCompagnies(
+                                etudiant.compagnie_id
+                            )}
+
+                        </select>
+
+
+                        <select
+                            class="modification-statut"
+                            required
+                        >
+
+                            <option
+                                value="actif"
+                                ${
+                                    String(
+                                        etudiant.statut || ""
+                                    ).trim() === "actif"
+                                        ? "selected"
+                                        : ""
+                                }
+                            >
+                                Actif
+                            </option>
+
+
+                            <option
+                                value="inactif"
+                                ${
+                                    String(
+                                        etudiant.statut || ""
+                                    ).trim() === "inactif"
+                                        ? "selected"
+                                        : ""
+                                }
+                            >
+                                Inactif
+                            </option>
+
+                        </select>
+
+
+                        <button type="submit">
+                            Enregistrer les modifications
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="bouton-annuler-modification"
+                        >
+                            Annuler
+                        </button>
+
+
+                        <p
+                            class="message-modification"
+                        ></p>
+
+                    </form>
+
+                </div>
+
+            `;
+
+
+            // ==================================
+            // BOUTON MODIFIER
+            // ==================================
+
+            const boutonModifier =
+                carte.querySelector(
+                    ".bouton-modifier-etudiant"
+                );
+
+
+            const zoneModification =
+                carte.querySelector(
+                    ".zone-modification-etudiant"
+                );
+
+
+            boutonModifier.addEventListener(
+                "click",
+                function () {
+
+                    zoneModification.style.display =
+                        "block";
+
+
+                    boutonModifier.style.display =
+                        "none";
+
+                }
+            );
+
+
+            // ==================================
+            // BOUTON ANNULER MODIFICATION
+            // ==================================
+
+            const boutonAnnuler =
+                carte.querySelector(
+                    ".bouton-annuler-modification"
+                );
+
+
+            boutonAnnuler.addEventListener(
+                "click",
+                function () {
+
+                    zoneModification.style.display =
+                        "none";
+
+
+                    boutonModifier.style.display =
+                        "inline-block";
+
+                }
+            );
+
+
+            // ==================================
+            // FORMULAIRE DE MODIFICATION
+            // ==================================
+
+            const formulaireModification =
+                carte.querySelector(
+                    ".form-modification-etudiant"
+                );
+
+
+            const messageModification =
+                carte.querySelector(
+                    ".message-modification"
+                );
+
+
+            formulaireModification.addEventListener(
+                "submit",
+                async function (event) {
+
+                    event.preventDefault();
+
+
+                    const nouveauNom =
+                        carte.querySelector(
+                            ".modification-nom"
+                        )
+                        .value
+                        .trim();
+
+
+                    const nouveauPrenom =
+                        carte.querySelector(
+                            ".modification-prenom"
+                        )
+                        .value
+                        .trim();
+
+
+                    const nouveauNumeroPrincipal =
+                        carte.querySelector(
+                            ".modification-numero-principal"
+                        )
+                        .value
+                        .replace(
+                            /\D/g,
+                            ""
+                        );
+
+
+                    const nouveauNumeroSecondaire =
+                        carte.querySelector(
+                            ".modification-numero-secondaire"
+                        )
+                        .value
+                        .replace(
+                            /\D/g,
+                            ""
+                        );
+
+
+                    const nouvelleCompagnieId =
+                        carte.querySelector(
+                            ".modification-compagnie"
+                        )
+                        .value;
+
+
+                    const nouveauStatut =
+                        carte.querySelector(
+                            ".modification-statut"
+                        )
+                        .value;
+
+
+                    if (
+                        !nouveauNom ||
+                        !nouveauPrenom ||
+                        !nouveauNumeroPrincipal ||
+                        !nouvelleCompagnieId
+                    ) {
+
+                        messageModification.textContent =
+                            "Veuillez remplir tous les champs obligatoires.";
+
+                        return;
+
+                    }
+
+
+                    messageModification.textContent =
+                        "Enregistrement en cours...";
+
+
+                    const {
+                        error: erreurModification
+                    } = await supabaseClient
+
+                        .from("etudiants")
+
+                        .update({
+
+                            nom:
+                                nouveauNom,
+
+                            prenom:
+                                nouveauPrenom,
+
+                            numero_principal:
+                                nouveauNumeroPrincipal,
+
+                            numero_secondaire:
+                                nouveauNumeroSecondaire ||
+                                null,
+
+                            compagnie_id:
+                                Number(
+                                    nouvelleCompagnieId
+                                ),
+
+                            statut:
+                                nouveauStatut
+
+                        })
+
+                        .eq(
+                            "id",
+                            etudiant.id
+                        );
+
+
+                    if (erreurModification) {
+
+                        console.error(
+                            "Erreur modification :",
+                            erreurModification
+                        );
+
+
+                        messageModification.textContent =
+                            "Impossible d'enregistrer les modifications.";
+
+                        return;
+
+                    }
+
+
+                    messageModification.textContent =
+                        "Modifications enregistrées.";
+
+
+                    setTimeout(
+                        async function () {
+
+                            await chargerEtudiants();
+
+                        },
+                        500
+                    );
+
+                }
+            );
+
+
+            // ==================================
+            // BOUTON IMPRIMER LA FICHE
+            // ==================================
+
+            const boutonImprimer =
+                carte.querySelector(
+                    ".bouton-imprimer-fiche"
+                );
+
+
+            boutonImprimer.addEventListener(
+                "click",
+                async function () {
+
+                    await imprimerFicheEtudiant(
+                        etudiant
+                    );
+
+                }
+            );
+
+
+            // ==================================
+            // SUPPRIMER DEFINITIVEMENT
+            // ==================================
+
+            const boutonSupprimer =
+                carte.querySelector(
+                    ".bouton-supprimer-etudiant"
+                );
+
+
+            const messageSuppression =
+                carte.querySelector(
+                    ".message-suppression"
+                );
+
+
+            boutonSupprimer.addEventListener(
+                "click",
+                async function () {
+
+
+                    const confirmation =
+                        confirm(
+                            `Voulez-vous vraiment supprimer définitivement ${nomComplet} ?\n\n` +
+                            "Cette action supprimera également ses opérations, ses paiements et son compte de connexion.\n\n" +
+                            "Cette action est irréversible."
+                        );
+
+
+                    if (!confirmation) {
+
+                        return;
+
+                    }
+
+
+                    boutonSupprimer.disabled =
+                        true;
+
+
+                    boutonSupprimer.textContent =
+                        "Suppression en cours...";
+
+
+                    messageSuppression.textContent =
+                        "Suppression de l'étudiant...";
+
+
+                    try {
+
+                        const {
+                            data,
+                            error
+                        } = await supabaseClient
+                            .functions
+                            .invoke(
+                                "supprimer-etudiant",
+                                {
+                                    body: {
+
+                                        etudiant_id:
+                                            Number(
+                                                etudiant.id
+                                            )
+
+                                    }
+                                }
+                            );
+
+
+                        if (error) {
+
+                            console.error(
+                                "Erreur Edge Function suppression :",
+                                error
+                            );
+
+
+                            messageSuppression.textContent =
+                                "Impossible de supprimer l'étudiant.";
+
+                            boutonSupprimer.disabled =
+                                false;
+
+
+                            boutonSupprimer.textContent =
+                                "Supprimer définitivement";
+
+                            return;
+
+                        }
+
+
+                        if (
+                            !data ||
+                            data.success !== true
+                        ) {
+
+                            console.error(
+                                "Erreur suppression étudiant :",
+                                data
+                            );
+
+
+                            messageSuppression.textContent =
+                                data?.message ||
+                                "Impossible de supprimer l'étudiant.";
+
+
+                            boutonSupprimer.disabled =
+                                false;
+
+
+                            boutonSupprimer.textContent =
+                                "Supprimer définitivement";
+
+                            return;
+
+                        }
+
+
+                        messageSuppression.textContent =
+                            "Étudiant supprimé avec succès.";
+
+
+                        await chargerEtudiants();
+
+
+                    } catch (erreur) {
+
+                        console.error(
+                            "Erreur inattendue suppression :",
+                            erreur
+                        );
+
+
+                        messageSuppression.textContent =
+                            "Une erreur inattendue est survenue.";
+
+
+                        boutonSupprimer.disabled =
+                            false;
+
+
+                        boutonSupprimer.textContent =
+                            "Supprimer définitivement";
+
+                    }
+
+                }
+            );
+
+
+            listeEtudiants.appendChild(
+                carte
+            );
+
+        }
+    );
+
+}
+
+
+// ==========================================
+// CREER LES OPTIONS DES COMPAGNIES
+// ==========================================
+
+function creerOptionsCompagnies(
+    compagnieActuelleId
+) {
+
+    let options = "";
+
+
+    toutesLesCompagnies.forEach(
+        function (compagnie) {
+
+
+            const selection =
+                Number(compagnie.id) ===
+                Number(compagnieActuelleId)
+                    ? "selected"
+                    : "";
+
+
+            options += `
+
+                <option
+                    value="${compagnie.id}"
+                    ${selection}
+                >
+                    ${echapperHTML(compagnie.nom)}
+                </option>
+
+            `;
+
+        }
+    );
+
+
+    return options;
+
+}
+
+
+// ==========================================
+// CHARGER L'HISTORIQUE DES OPERATIONS
+// ==========================================
+
+async function chargerHistoriqueOperations(
+    etudiantId
+) {
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("operations")
+
+        .select(`
+            id,
+            created_at,
+            type_operation,
+            categorie,
+            produit_id,
+            quantite,
+            montant,
+            moyen_paiement,
+            note,
+            produits (
+                id,
+                nom,
+                categorie,
+                prix
+            )
+        `)
+
+        .eq(
+            "etudiant_id",
+            etudiantId
+        )
+
+        .order(
+            "created_at",
+            {
+                ascending: false
+            }
+        );
+
+
+    if (error) {
+
+        console.error(
+            "Erreur chargement opérations :",
+            error
+        );
+
+
+        throw new Error(
+            "Impossible de charger l'historique des opérations."
+        );
+
+    }
+
+
+    return data || [];
+
+}
+
+
+// ==========================================
+// CHARGER L'HISTORIQUE DES PAIEMENTS
+// ==========================================
+
+async function chargerHistoriquePaiements(
+    etudiantId
+) {
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("paiements")
+
+        .select(`
+            id,
+            created_at,
+            categorie,
+            montant,
+            moyen_paiement
+        `)
+
+        .eq(
+            "etudiant_id",
+            etudiantId
+        )
+
+        .order(
+            "created_at",
+            {
+                ascending: false
+            }
+        );
+
+
+    if (error) {
+
+        console.error(
+            "Erreur chargement paiements :",
+            error
+        );
+
+
+        throw new Error(
+            "Impossible de charger l'historique des paiements."
+        );
+
+    }
+
+
+    return data || [];
+
+}
+
+
+// ==========================================
+// CONSTRUIRE L'HISTORIQUE DES OPERATIONS
+// ==========================================
+
+function construireTableauOperations(
+    operations
+) {
+
+    if (
+        !operations ||
+        operations.length === 0
+    ) {
+
+        return `
+            <p class="aucune-donnee">
+                Aucune opération enregistrée.
+            </p>
+        `;
+
+    }
+
+
+    let totalJus = 0;
+
+    let totalManger = 0;
+
+
+    const lignes =
+        operations.map(
+            function (operation) {
+
+
+                const categorie =
+                    operation.categorie ||
+                    operation.produits?.categorie ||
+                    "Non renseignée";
+
+
+                const montant =
+                    Number(
+                        operation.montant || 0
+                    );
+
+
+                if (
+                    String(
+                        categorie
+                    )
+                    .toLowerCase()
+                    .includes("jus")
+                ) {
+
+                    totalJus +=
+                        montant;
+
+                }
+
+
+                if (
+                    String(
+                        categorie
+                    )
+                    .toLowerCase()
+                    .includes("manger")
+                ) {
+
+                    totalManger +=
+                        montant;
+
+                }
+
+
+                const produit =
+                    operation.produits?.nom ||
+                    "Montant direct";
+
+
+                const quantite =
+                    operation.quantite ??
+                    "—";
+
+
+                const typeOperation =
+                    operation.type_operation ||
+                    "—";
+
+
+                const note =
+                    operation.note ||
+                    "—";
+
+
+                return `
+
+                    <tr>
+
+                        <td>
+                            ${echapperHTML(
+                                formaterDate(
+                                    operation.created_at
+                                )
+                            )}
+                        </td>
+
+                        <td>
+                            ${echapperHTML(
+                                typeOperation
+                            )}
+                        </td>
+
+                        <td>
+                            ${echapperHTML(
+                                categorie
+                            )}
+                        </td>
+
+                        <td>
+                            ${echapperHTML(
+                                produit
+                            )}
+                        </td>
+
+                        <td>
+                            ${echapperHTML(
+                                String(quantite)
+                            )}
+                        </td>
+
+                        <td class="montant">
+                            ${formaterMontant(
+                                montant
+                            )}
+                        </td>
+
+                        <td>
+                            ${echapperHTML(
+                                note
+                            )}
+                        </td>
+
+                    </tr>
+
+                `;
+
+            }
+        )
+        .join("");
+
+
+    return `
+
+        <table class="fiche-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>Date</th>
+
+                    <th>Type</th>
+
+                    <th>Catégorie</th>
+
+                    <th>Produit</th>
+
+                    <th>Qté</th>
+
+                    <th>Montant</th>
+
+                    <th>Note</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                ${lignes}
+
+            </tbody>
+
+        </table>
+
+        <p style="font-size: 10px; margin-top: 6px;">
+
+            <strong>
+                Total opérations Jus :
+            </strong>
+
+            ${formaterMontant(totalJus)}
+
+            &nbsp;&nbsp;&nbsp;
+
+            <strong>
+                Total opérations Manger :
+            </strong>
+
+            ${formaterMontant(totalManger)}
+
+        </p>
+
+    `;
+
+}
+
+
+// ==========================================
+// CONSTRUIRE L'HISTORIQUE DES PAIEMENTS
+// ==========================================
+
+function construireTableauPaiements(
+    paiements
+) {
+
+    if (
+        !paiements ||
+        paiements.length === 0
+    ) {
+
+        return `
+
+            <p class="aucune-donnee">
+                Aucun paiement enregistré.
+            </p>
+
+        `;
+
+    }
+
+
+    let totalJus = 0;
+
+    let totalManger = 0;
+
+
+    const lignes =
+        paiements.map(
+            function (paiement) {
+
+
+                const categorie =
+                    paiement.categorie ||
+                    "Non renseignée";
+
+
+                const montant =
+                    Number(
+                        paiement.montant || 0
+                    );
+
+
+                const categorieNormalisee =
+                    String(
+                        categorie
+                    )
+                    .toLowerCase();
+
+
+                if (
+                    categorieNormalisee
+                        .includes("jus")
+                ) {
+
+                    totalJus +=
+                        montant;
+
+                }
+
+
+                if (
+                    categorieNormalisee
+                        .includes("manger")
+                ) {
+
+                    totalManger +=
+                        montant;
+
+                }
+
+
+                return `
+
+                    <tr>
+
+                        <td>
+                            ${echapperHTML(
+                                formaterDate(
+                                    paiement.created_at
+                                )
+                            )}
+                        </td>
+
+                        <td>
+                            ${echapperHTML(
+                                categorie
+                            )}
+                        </td>
+
+                        <td class="montant">
+                            ${formaterMontant(
+                                montant
+                            )}
+                        </td>
+
+                        <td>
+                            ${echapperHTML(
+                                paiement.moyen_paiement ||
+                                "Non renseigné"
+                            )}
+                        </td>
+
+                    </tr>
+
+                `;
+
+            }
+        )
+        .join("");
+
+
+    return `
+
+        <table class="fiche-table">
+
+            <thead>
+
+                <tr>
+
+                    <th>Date</th>
+
+                    <th>Catégorie</th>
+
+                    <th>Montant payé</th>
+
+                    <th>Moyen de paiement</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                ${lignes}
+
+            </tbody>
+
+        </table>
+
+
+        <p style="font-size: 10px; margin-top: 6px;">
+
+            <strong>
+                Total payé Jus :
+            </strong>
+
+            ${formaterMontant(totalJus)}
+
+            &nbsp;&nbsp;&nbsp;
+
+            <strong>
+                Total payé Manger :
+            </strong>
+
+            ${formaterMontant(totalManger)}
+
+        </p>
+
+    `;
+
+}
+
+
+// ==========================================
+// CALCULER LE RESUME FINANCIER
+// ==========================================
+
+function calculerResumeFinancier(
+    etudiant,
+    operations,
+    paiements
+) {
+
+    let totalOperationsJus = 0;
+
+    let totalOperationsManger = 0;
+
+    let totalPaiementsJus = 0;
+
+    let totalPaiementsManger = 0;
+
+
+    operations.forEach(
+        function (operation) {
+
+            const categorie =
+                String(
+                    operation.categorie ||
+                    operation.produits?.categorie ||
+                    ""
+                )
+                .toLowerCase();
+
+
+            const montant =
+                Number(
+                    operation.montant || 0
+                );
+
+
+            if (
+                categorie.includes("jus")
+            ) {
+
+                totalOperationsJus +=
+                    montant;
+
+            }
+
+
+            if (
+                categorie.includes("manger")
+            ) {
+
+                totalOperationsManger +=
+                    montant;
+
+            }
+
+        }
+    );
+
+
+    paiements.forEach(
+        function (paiement) {
+
+            const categorie =
+                String(
+                    paiement.categorie || ""
+                )
+                .toLowerCase();
+
+
+            const montant =
+                Number(
+                    paiement.montant || 0
+                );
+
+
+            if (
+                categorie.includes("jus")
+            ) {
+
+                totalPaiementsJus +=
+                    montant;
+
+            }
+
+
+            if (
+                categorie.includes("manger")
+            ) {
+
+                totalPaiementsManger +=
+                    montant;
+
+            }
+
+        }
+    );
+
+
+    const detteJus =
+        Number(
+            etudiant.dette_jus || 0
+        );
+
+
+    const detteManger =
+        Number(
+            etudiant.dette_manger || 0
+        );
+
+
+    const detteTotale =
+        detteJus +
+        detteManger;
+
+
+    return {
+
+        totalOperationsJus,
+
+        totalOperationsManger,
+
+        totalPaiementsJus,
+
+        totalPaiementsManger,
+
+        detteJus,
+
+        detteManger,
+
+        detteTotale
+
+    };
+
+}
+
+
+// ==========================================
+// IMPRIMER LA FICHE D'UN ETUDIANT
+// ==========================================
+
+async function imprimerFicheEtudiant(
+    etudiant
+) {
+
+    if (!etudiant) {
+
+        return;
+
+    }
+
+
+    const bouton =
+        document.activeElement;
+
+
+    if (
+        bouton &&
+        bouton.tagName === "BUTTON"
+    ) {
+
+        bouton.disabled =
+            true;
+
+    }
+
+
+    zoneImpressionEtudiant.innerHTML = `
+
+        <div class="fiche-entete">
+
+            <h1>
+                Dr. Right
+            </h1>
+
+            <h2>
+                Fiche individuelle de l'étudiant
+            </h2>
+
+            <p>
+                Préparation du rapport...
+            </p>
+
+        </div>
+
+    `;
+
+
+    try {
+
+        const [
+            operations,
+            paiements
+        ] = await Promise.all([
+
+            chargerHistoriqueOperations(
+                etudiant.id
+            ),
+
+            chargerHistoriquePaiements(
+                etudiant.id
+            )
+
+        ]);
+
+
+        const nomComplet =
+            `${etudiant.prenom || ""} ${etudiant.nom || ""}`
+            .trim();
+
+
+        const compagnie =
+            etudiant.compagnies?.nom ||
+            toutesLesCompagnies.find(
+                function (compagnieItem) {
+
+                    return Number(
+                        compagnieItem.id
+                    ) === Number(
+                        etudiant.compagnie_id
+                    );
+
+                }
+            )?.nom ||
+            "Non renseignée";
+
+
+        const resume =
+            calculerResumeFinancier(
+                etudiant,
+                operations,
+                paiements
+            );
+
+
+        zoneImpressionEtudiant.innerHTML = `
+
+            <!-- ================================= -->
+            <!-- ENTETE                            -->
+            <!-- ================================= -->
+
+            <div class="fiche-entete">
+
+                <h1>
+                    Dr. Right
+                </h1>
+
+                <h2>
+                    Fiche individuelle de l'étudiant
+                </h2>
+
+                <p>
+                    Rapport généré le
+                    ${echapperHTML(
+                        formaterDate(
+                            new Date()
+                        )
+                    )}
+                </p>
+
+            </div>
+
+
+            <!-- ================================= -->
+            <!-- IDENTITE                          -->
+            <!-- ================================= -->
+
+            <div class="fiche-section">
+
+                <h3>
+                    1. Informations de l'étudiant
+                </h3>
+
+
+                <div class="fiche-identite">
+
+                    <p>
+                        <strong>
+                            Nom et prénom :
+                        </strong>
+
+                        ${echapperHTML(
+                            nomComplet
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>
+                            Compagnie :
+                        </strong>
+
+                        ${echapperHTML(
+                            compagnie
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>
+                            Numéro principal :
+                        </strong>
+
+                        ${echapperHTML(
+                            etudiant.numero_principal ||
+                            "Non renseigné"
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>
+                            Numéro secondaire :
+                        </strong>
+
+                        ${echapperHTML(
+                            etudiant.numero_secondaire ||
+                            "Non renseigné"
+                        )}
+                    </p>
+
+
+                    <p>
+                        <strong>
+                            Statut :
+                        </strong>
+
+                        ${echapperHTML(
+                            String(
+                                etudiant.statut ||
+                                "Non renseigné"
+                            ).trim()
+                        )}
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- ================================= -->
+            <!-- SITUATION FINANCIERE              -->
+            <!-- ================================= -->
+
+            <div class="fiche-section">
+
+                <h3>
+                    2. Situation financière actuelle
+                </h3>
+
+
+                <table class="resume-financier">
+
+                    <tr>
+
+                        <td>
+                            Dette Jus
+                        </td>
+
+                        <td>
+                            ${formaterMontant(
+                                resume.detteJus
+                            )}
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td>
+                            Dette Manger
+                        </td>
+
+                        <td>
+                            ${formaterMontant(
+                                resume.detteManger
+                            )}
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td class="resume-total">
+                            Dette totale
+                        </td>
+
+                        <td class="resume-total">
+                            ${formaterMontant(
+                                resume.detteTotale
+                            )}
+                        </td>
+
+                    </tr>
+
+                </table>
+
+            </div>
+
+
+            <!-- ================================= -->
+            <!-- HISTORIQUE OPERATIONS             -->
+            <!-- ================================= -->
+
+            <div class="fiche-section">
+
+                <h3>
+                    3. Historique des opérations
+                </h3>
+
+
+                ${construireTableauOperations(
+                    operations
+                )}
+
+            </div>
+
+
+            <!-- ================================= -->
+            <!-- HISTORIQUE PAIEMENTS              -->
+            <!-- ================================= -->
+
+            <div class="fiche-section">
+
+                <h3>
+                    4. Historique des paiements
+                </h3>
+
+
+                ${construireTableauPaiements(
+                    paiements
+                )}
+
+            </div>
+
+
+            <!-- ================================= -->
+            <!-- RESUME                            -->
+            <!-- ================================= -->
+
+            <div class="fiche-section">
+
+                <h3>
+                    5. Résumé
+                </h3>
+
+
+                <table class="resume-financier">
+
+                    <tr>
+
+                        <td>
+                            Total des opérations Jus
+                        </td>
+
+                        <td>
+                            ${formaterMontant(
+                                resume.totalOperationsJus
+                            )}
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td>
+                            Total des opérations Manger
+                        </td>
+
+                        <td>
+                            ${formaterMontant(
+                                resume.totalOperationsManger
+                            )}
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td>
+                            Total payé Jus
+                        </td>
+
+                        <td>
+                            ${formaterMontant(
+                                resume.totalPaiementsJus
+                            )}
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td>
+                            Total payé Manger
+                        </td>
+
+                        <td>
+                            ${formaterMontant(
+                                resume.totalPaiementsManger
+                            )}
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td>
+                            Solde Jus
+                        </td>
+
+                        <td>
+                            ${formaterMontant(
+                                resume.detteJus
+                            )}
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td>
+                            Solde Manger
+                        </td>
+
+                        <td>
+                            ${formaterMontant(
+                                resume.detteManger
+                            )}
+                        </td>
+
+                    </tr>
+
+
+                    <tr>
+
+                        <td class="resume-total">
+                            SOLDE TOTAL
+                        </td>
+
+                        <td class="resume-total">
+                            ${formaterMontant(
+                                resume.detteTotale
+                            )}
+                        </td>
+
+                    </tr>
+
+                </table>
+
+            </div>
+
+
+            <!-- ================================= -->
+            <!-- PIED DE PAGE                      -->
+            <!-- ================================= -->
+
+            <div class="fiche-pied">
+
+                Document généré par Dr. Right.
+                Fiche individuelle de l'étudiant.
+
+            </div>
+
+        `;
+
+
+        /*
+         * Petit délai afin de laisser le navigateur
+         * terminer le rendu de la fiche avant
+         * l'ouverture de l'aperçu d'impression.
+         */
+
+        setTimeout(
+            function () {
+
+                window.print();
+
+            },
+            300
+        );
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur impression fiche étudiant :",
+            erreur
+        );
+
+
+        alert(
+            erreur.message ||
+            "Impossible de préparer la fiche d'impression."
+        );
+
+    } finally {
+
+        if (
+            bouton &&
+            bouton.tagName === "BUTTON"
+        ) {
+
+            bouton.disabled =
+                false;
+
+        }
+
+    }
+
+}
+
+
+// ==========================================
+// APRES IMPRESSION
+// ==========================================
+
+window.addEventListener(
+    "afterprint",
+    function () {
+
+        zoneImpressionEtudiant.innerHTML =
+            "";
+
+    }
+);
+
+
+// ==========================================
+// AFFICHER / CACHER AJOUT
+// ==========================================
+
+boutonAfficherFormulaire.addEventListener(
+    "click",
+    function () {
+
+        if (
+            zoneFormulaireEtudiant
+                .style
+                .display === "none"
+        ) {
+
+            zoneFormulaireEtudiant
+                .style
+                .display =
+                "block";
+
+
+            boutonAfficherFormulaire.textContent =
+                "Annuler";
+
+        } else {
+
+            zoneFormulaireEtudiant
+                .style
+                .display =
+                "none";
+
+
+            boutonAfficherFormulaire.textContent =
+                "Ajouter un étudiant";
+
+        }
+
+    }
+);
+
+
+// ==========================================
+// AJOUTER UN ETUDIANT
+// ==========================================
+
+formulaireAjoutEtudiant.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+
+        const nom =
+            document
+                .getElementById(
+                    "nom-etudiant"
+                )
+                .value
+                .trim();
+
+
+        const prenom =
+            document
+                .getElementById(
+                    "prenom-etudiant"
+                )
+                .value
+                .trim();
+
+
+        const numeroPrincipal =
+            document
+                .getElementById(
+                    "numero-principal-etudiant"
+                )
+                .value
+                .replace(
+                    /\D/g,
+                    ""
+                );
+
+
+        const numeroSecondaire =
+            document
+                .getElementById(
+                    "numero-secondaire-etudiant"
+                )
+                .value
+                .replace(
+                    /\D/g,
+                    ""
+                );
+
+
+        const compagnieId =
+            selectCompagnie.value;
+
+
+        const email =
+            document
+                .getElementById(
+                    "email-etudiant"
+                )
+                .value
+                .trim()
+                .toLowerCase();
+
+
+        const motDePasse =
+            document
+                .getElementById(
+                    "mot-de-passe-etudiant"
+                )
+                .value;
+
+
+        if (
+            !nom ||
+            !prenom ||
+            !numeroPrincipal ||
+            !compagnieId ||
+            !email ||
+            !motDePasse
+        ) {
+
+            messageAjoutEtudiant.textContent =
+                "Veuillez remplir tous les champs obligatoires.";
+
+            return;
+
+        }
+
+
+        if (
+            motDePasse.length < 6
+        ) {
+
+            messageAjoutEtudiant.textContent =
+                "Le mot de passe doit contenir au moins 6 caractères.";
+
+            return;
+
+        }
+
+
+        messageAjoutEtudiant.textContent =
+            "Création du compte étudiant en cours...";
+
+
+        const boutonEnregistrer =
+            formulaireAjoutEtudiant.querySelector(
+                'button[type="submit"]'
+            );
+
+
+        boutonEnregistrer.disabled =
+            true;
+
+
+        try {
+
+            const {
+                data,
+                error
+            } = await supabaseClient
+                .functions
+                .invoke(
+                    "creer-etudiant",
+                    {
+                        body: {
+
+                            nom:
+                                nom,
+
+                            prenom:
+                                prenom,
+
+                            compagnie_id:
+                                Number(
+                                    compagnieId
+                                ),
+
+                            numero_principal:
+                                numeroPrincipal,
+
+                            numero_secondaire:
+                                numeroSecondaire ||
+                                null,
+
+                            email:
+                                email,
+
+                            mot_de_passe:
+                                motDePasse
+
+                        }
+                    }
+                );
+
+
+            if (error) {
+
+                console.error(
+                    "Erreur Edge Function :",
+                    error
+                );
+
+
+                messageAjoutEtudiant.textContent =
+                    "Impossible de contacter le serveur. Vérifiez le déploiement de la fonction creer-etudiant.";
+
+                return;
+
+            }
+
+
+            if (
+                !data ||
+                data.success !== true
+            ) {
+
+                console.error(
+                    "Erreur création étudiant :",
+                    data
+                );
+
+
+                messageAjoutEtudiant.textContent =
+                    data?.message ||
+                    "Impossible de créer l'étudiant.";
+
+                return;
+
+            }
+
+
+            messageAjoutEtudiant.textContent =
+                "Étudiant et compte de connexion créés avec succès.";
+
+
+            formulaireAjoutEtudiant.reset();
+
+
+            await chargerEtudiants();
+
+
+            setTimeout(
+                function () {
+
+                    zoneFormulaireEtudiant
+                        .style
+                        .display =
+                        "none";
+
+
+                    boutonAfficherFormulaire.textContent =
+                        "Ajouter un étudiant";
+
+
+                    messageAjoutEtudiant.textContent =
+                        "";
+
+                },
+                1000
+            );
+
+
+        } catch (erreur) {
+
+            console.error(
+                "Erreur inattendue :",
+                erreur
+            );
+
+
+            messageAjoutEtudiant.textContent =
+                "Une erreur inattendue est survenue.";
+
+        } finally {
+
+            boutonEnregistrer.disabled =
+                false;
+
+        }
+
+    }
+);
+
+
+// ==========================================
+// RECHERCHER UN ETUDIANT
+// ==========================================
+
+rechercheEtudiant.addEventListener(
+    "input",
+    function () {
+
+
+        const recherche =
+            rechercheEtudiant
+                .value
+                .toLowerCase()
+                .trim();
+
+
+        if (!recherche) {
+
+            afficherEtudiants(
+                tousLesEtudiants
+            );
+
+            return;
+
+        }
+
+
+        const resultat =
+            tousLesEtudiants.filter(
+                function (etudiant) {
+
+
+                    const nom =
+                        (
+                            etudiant.nom ||
+                            ""
+                        )
+                        .toLowerCase();
+
+
+                    const prenom =
+                        (
+                            etudiant.prenom ||
+                            ""
+                        )
+                        .toLowerCase();
+
+
+                    const numeroPrincipal =
+                        etudiant.numero_principal ||
+                        "";
+
+
+                    const numeroSecondaire =
+                        etudiant.numero_secondaire ||
+                        "";
+
+
+                    return (
+
+                        nom.includes(
+                            recherche
+                        )
+
+                        ||
+
+                        prenom.includes(
+                            recherche
+                        )
+
+                        ||
+
+                        numeroPrincipal.includes(
+                            recherche
+                        )
+
+                        ||
+
+                        numeroSecondaire.includes(
+                            recherche
+                        )
+
+                    );
+
+                }
+            );
+
+
+        afficherEtudiants(
+            resultat
+        );
+
+    }
+);
+
+
+// ==========================================
+// DEMARRAGE
+// ==========================================
+
+async function demarrerPage() {
+
+    const autorise =
+        await verifierAdministrateur();
+
+
+    if (!autorise) {
+
+        return;
+
+    }
+
+
+    await chargerCompagnies();
+
+
+    await chargerEtudiants();
+
+}
+
+
+demarrerPage();
+
+
+</script>
+
+</body>
+
+</html>

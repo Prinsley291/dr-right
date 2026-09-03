@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Opérations - Dr. Right</title>
+
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Dr. Right</h1>
+
+    <h2>Dettes et achats</h2>
+
+    <p id="message-page">
+        Vérification de votre accès...
+    </p>
+
+
+    <button id="bouton-afficher-formulaire" type="button">
+        Ajouter des opérations
+    </button>
+
+
+    <div id="zone-formulaire-operation" style="display: none;">
+
+        <h3>Nouvelle opération</h3>
+
+
+        <form id="form-operation">
+
+            <!-- ETUDIANT -->
+
+            <div class="bloc-operation">
+
+                <label for="etudiant-operation">
+                    Étudiant
+                </label>
+
+                <select id="etudiant-operation" required>
+
+                    <option value="">
+                        Chargement des étudiants...
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- CATEGORIE -->
+
+            <div class="bloc-operation">
+
+                <label for="categorie-operation">
+                    Catégorie
+                </label>
+
+                <select id="categorie-operation" required>
+
+                    <option value="">
+                        -- Choisir une catégorie --
+                    </option>
+
+                    <option value="jus">
+                        Jus
+                    </option>
+
+                    <option value="manger">
+                        Manger
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- AJOUT PRODUIT -->
+
+            <div class="bloc-operation">
+
+                <h3>Ajouter un produit</h3>
+
+                <label for="produit-operation">
+                    Produit
+                </label>
+
+                <select id="produit-operation">
+
+                    <option value="">
+                        -- Choisir un produit --
+                    </option>
+
+                </select>
+
+
+                <p id="info-produit">
+                    Choisissez d'abord une catégorie et un produit.
+                </p>
+
+
+                <label for="quantite-operation">
+                    Quantité
+                </label>
+
+                <input
+                    id="quantite-operation"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value="1"
+                >
+
+
+                <button
+                    id="bouton-ajouter-produit"
+                    type="button"
+                >
+                    Ajouter ce produit
+                </button>
+
+            </div>
+
+
+            <!-- MONTANT DIRECT -->
+
+            <div class="bloc-operation">
+
+                <h3>Ajouter une dette directe</h3>
+
+                <label for="montant-direct">
+                    Montant (FCFA)
+                </label>
+
+                <input
+                    id="montant-direct"
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="Exemple : 500"
+                >
+
+
+                <label for="note-directe">
+                    Précision (facultatif)
+                </label>
+
+                <textarea
+                    id="note-directe"
+                    placeholder="Facultatif"
+                ></textarea>
+
+
+                <button
+                    id="bouton-ajouter-montant"
+                    type="button"
+                >
+                    Ajouter ce montant
+                </button>
+
+            </div>
+
+
+            <!-- PANIER -->
+
+            <div class="bloc-operation">
+
+                <h3>Opérations à enregistrer</h3>
+
+                <div id="panier-operations">
+
+                    <p>
+                        Aucune opération ajoutée pour le moment.
+                    </p>
+
+                </div>
+
+
+                <p>
+
+                    <strong>
+                        Total :
+                    </strong>
+
+                    <strong id="total-panier">
+                        0
+                    </strong>
+
+                    FCFA
+
+                </p>
+
+            </div>
+
+
+            <button
+                id="bouton-enregistrer-tout"
+                type="submit"
+            >
+                Enregistrer toutes les opérations
+            </button>
+
+        </form>
+
+
+        <p id="message-operation"></p>
+
+    </div>
+
+
+    <hr>
+
+
+    <input
+        type="search"
+        id="recherche-operation"
+        placeholder="Rechercher un étudiant, un produit ou une catégorie"
+    >
+
+
+    <h3>Historique des opérations</h3>
+
+
+    <div id="liste-operations">
+        Chargement de l'historique...
+    </div>
+
+
+    <br>
+
+
+    <a href="administrateur.html">
+
+        <button type="button">
+            Retour au tableau de bord
+        </button>
+
+    </a>
+
+</div>
+
+
+
+
+<script>
+
+// ======================================================
+// ELEMENTS
+// ======================================================
+
+const messagePage =
+    document.getElementById("message-page");
+
+
+const boutonAfficherFormulaire =
+    document.getElementById("bouton-afficher-formulaire");
+
+
+const zoneFormulaireOperation =
+    document.getElementById("zone-formulaire-operation");
+
+
+const formulaireOperation =
+    document.getElementById("form-operation");
+
+
+const etudiantOperation =
+    document.getElementById("etudiant-operation");
+
+
+const categorieOperation =
+    document.getElementById("categorie-operation");
+
+
+const produitOperation =
+    document.getElementById("produit-operation");
+
+
+const infoProduit =
+    document.getElementById("info-produit");
+
+
+const quantiteOperation =
+    document.getElementById("quantite-operation");
+
+
+const boutonAjouterProduit =
+    document.getElementById("bouton-ajouter-produit");
+
+
+const montantDirect =
+    document.getElementById("montant-direct");
+
+
+const noteDirecte =
+    document.getElementById("note-directe");
+
+
+const boutonAjouterMontant =
+    document.getElementById("bouton-ajouter-montant");
+
+
+const panierOperations =
+    document.getElementById("panier-operations");
+
+
+const totalPanier =
+    document.getElementById("total-panier");
+
+
+const messageOperation =
+    document.getElementById("message-operation");
+
+
+const listeOperations =
+    document.getElementById("liste-operations");
+
+
+const rechercheOperation =
+    document.getElementById("recherche-operation");
+
+
+// ======================================================
+// VARIABLES
+// ======================================================
+
+let administrateurConnecte = null;
+
+let tousLesEtudiants = [];
+
+let tousLesProduits = [];
+
+let toutesLesOperations = [];
+
+let panier = [];
+
+
+// ======================================================
+// VERIFIER ADMINISTRATEUR
+// ======================================================
+
+async function verifierAdministrateur() {
+
+    const {
+        data: sessionData,
+        error: sessionError
+    } = await supabaseClient
+        .auth
+        .getSession();
+
+
+    if (
+        sessionError ||
+        !sessionData.session
+    ) {
+
+        window.location.href =
+            "./connexion-administrateur.html";
+
+        return false;
+    }
+
+
+    const utilisateur =
+        sessionData.session.user;
+
+
+    const {
+        data: administrateur,
+        error: erreurAdministrateur
+    } = await supabaseClient
+
+        .from("administrateurs")
+
+        .select("*")
+
+        .eq(
+            "auth_user_id",
+            utilisateur.id
+        )
+
+        .eq(
+            "statut",
+            "actif"
+        )
+
+        .maybeSingle();
+
+
+    if (
+        erreurAdministrateur ||
+        !administrateur
+    ) {
+
+        await supabaseClient
+            .auth
+            .signOut();
+
+
+        window.location.href =
+            "./connexion-administrateur.html";
+
+        return false;
+    }
+
+
+    administrateurConnecte =
+        administrateur;
+
+
+    messagePage.textContent =
+        `Connecté : ${administrateur.prenom} ${administrateur.nom}`;
+
+
+    return true;
+
+}
+
+
+// ======================================================
+// AFFICHER / CACHER FORMULAIRE
+// ======================================================
+
+boutonAfficherFormulaire.addEventListener(
+    "click",
+    function () {
+
+        if (
+            zoneFormulaireOperation.style.display ===
+            "none"
+        ) {
+
+            zoneFormulaireOperation.style.display =
+                "block";
+
+
+            boutonAfficherFormulaire.textContent =
+                "Fermer";
+
+        } else {
+
+            zoneFormulaireOperation.style.display =
+                "none";
+
+
+            boutonAfficherFormulaire.textContent =
+                "Ajouter des opérations";
+
+        }
+
+    }
+);
+
+
+// ======================================================
+// CHARGER ETUDIANTS
+// ======================================================
+
+async function chargerEtudiants() {
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("etudiants")
+
+        .select(
+            "id, nom, prenom"
+        )
+
+        .eq(
+            "statut",
+            "actif"
+        )
+
+        .order(
+            "nom",
+            {
+                ascending: true
+            }
+        );
+
+
+    if (error) {
+
+        console.error(error);
+
+        return;
+    }
+
+
+    tousLesEtudiants =
+        data || [];
+
+
+    etudiantOperation.innerHTML =
+        '<option value="">-- Choisir un étudiant --</option>';
+
+
+    tousLesEtudiants.forEach(
+        function (etudiant) {
+
+            const option =
+                document.createElement("option");
+
+
+            option.value =
+                etudiant.id;
+
+
+            option.textContent =
+                `${etudiant.prenom} ${etudiant.nom}`;
+
+
+            etudiantOperation.appendChild(
+                option
+            );
+
+        }
+    );
+
+}
+
+
+// ======================================================
+// CHARGER PRODUITS
+// ======================================================
+
+async function chargerProduits() {
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("produits")
+
+        .select(
+            "id, nom, categorie, prix"
+        )
+
+        .eq(
+            "actif",
+            true
+        )
+
+        .order(
+            "nom",
+            {
+                ascending: true
+            }
+        );
+
+
+    if (error) {
+
+        console.error(error);
+
+        return;
+    }
+
+
+    tousLesProduits =
+        data || [];
+
+
+    actualiserListeProduits();
+
+}
+
+
+// ======================================================
+// ACTUALISER PRODUITS SELON CATEGORIE
+// ======================================================
+
+categorieOperation.addEventListener(
+    "change",
+    function () {
+
+        actualiserListeProduits();
+
+    }
+);
+
+
+function actualiserListeProduits() {
+
+    const categorie =
+        categorieOperation.value;
+
+
+    produitOperation.innerHTML =
+        '<option value="">-- Choisir un produit --</option>';
+
+
+    if (!categorie) {
+
+        infoProduit.textContent =
+            "Choisissez d'abord une catégorie.";
+
+        return;
+    }
+
+
+    const produitsCategorie =
+        tousLesProduits.filter(
+            function (produit) {
+
+                return (
+                    produit.categorie ===
+                    categorie
+                );
+
+            }
+        );
+
+
+    produitsCategorie.forEach(
+        function (produit) {
+
+            const option =
+                document.createElement("option");
+
+
+            option.value =
+                produit.id;
+
+
+            option.textContent =
+                `${produit.nom} — ${Number(produit.prix).toLocaleString("fr-FR")} FCFA`;
+
+
+            produitOperation.appendChild(
+                option
+            );
+
+        }
+    );
+
+
+    infoProduit.textContent =
+        "Choisissez un produit et sa quantité.";
+
+}
+
+
+// ======================================================
+// AFFICHER INFO PRODUIT
+// ======================================================
+
+produitOperation.addEventListener(
+    "change",
+    function () {
+
+        const produitId =
+            Number(produitOperation.value);
+
+
+        const produit =
+            tousLesProduits.find(
+                function (element) {
+
+                    return (
+                        Number(element.id) ===
+                        produitId
+                    );
+
+                }
+            );
+
+
+        if (!produit) {
+
+            return;
+        }
+
+
+        infoProduit.textContent =
+            `Prix unitaire : ${Number(produit.prix).toLocaleString("fr-FR")} FCFA`;
+
+    }
+);
+
+
+// ======================================================
+// AJOUTER PRODUIT AU PANIER
+// ======================================================
+
+boutonAjouterProduit.addEventListener(
+    "click",
+    function () {
+
+        const categorie =
+            categorieOperation.value;
+
+
+        const produitId =
+            Number(produitOperation.value);
+
+
+        const quantite =
+            Number(quantiteOperation.value);
+
+
+        if (!categorie) {
+
+            messageOperation.textContent =
+                "Choisissez d'abord une catégorie.";
+
+            return;
+        }
+
+
+        if (!produitId) {
+
+            messageOperation.textContent =
+                "Choisissez un produit.";
+
+            return;
+        }
+
+
+        if (
+            !quantite ||
+            quantite <= 0
+        ) {
+
+            messageOperation.textContent =
+                "Entrez une quantité valide.";
+
+            return;
+        }
+
+
+        const produit =
+            tousLesProduits.find(
+                function (element) {
+
+                    return (
+                        Number(element.id) ===
+                        produitId
+                    );
+
+                }
+            );
+
+
+        if (!produit) {
+
+            messageOperation.textContent =
+                "Produit introuvable.";
+
+            return;
+        }
+
+
+        const montant =
+            Number(produit.prix) *
+            quantite;
+
+
+        panier.push({
+
+            type_operation:
+                "achat",
+
+            categorie:
+                categorie,
+
+            produit_id:
+                produit.id,
+
+            nom_produit:
+                produit.nom,
+
+            quantite:
+                quantite,
+
+            montant:
+                montant,
+
+            note:
+                null
+
+        });
+
+
+        produitOperation.value =
+            "";
+
+
+        quantiteOperation.value =
+            "1";
+
+
+        infoProduit.textContent =
+            "Produit ajouté au panier.";
+
+
+        messageOperation.textContent =
+            "";
+
+
+        afficherPanier();
+
+    }
+);
+
+
+// ======================================================
+// AJOUTER MONTANT DIRECT
+// ======================================================
+
+boutonAjouterMontant.addEventListener(
+    "click",
+    function () {
+
+        const categorie =
+            categorieOperation.value;
+
+
+        const montant =
+            Number(montantDirect.value);
+
+
+        const note =
+            noteDirecte.value.trim();
+
+
+        if (!categorie) {
+
+            messageOperation.textContent =
+                "Choisissez d'abord la catégorie.";
+
+            return;
+        }
+
+
+        if (
+            !montant ||
+            montant <= 0
+        ) {
+
+            messageOperation.textContent =
+                "Entrez un montant valide.";
+
+            return;
+        }
+
+
+        panier.push({
+
+            type_operation:
+                "dette",
+
+            categorie:
+                categorie,
+
+            produit_id:
+                null,
+
+            nom_produit:
+                null,
+
+            quantite:
+                null,
+
+            montant:
+                montant,
+
+            note:
+                note || null
+
+        });
+
+
+        montantDirect.value =
+            "";
+
+
+        noteDirecte.value =
+            "";
+
+
+        messageOperation.textContent =
+            "";
+
+
+        afficherPanier();
+
+    }
+);
+
+
+// ======================================================
+// AFFICHER PANIER
+// ======================================================
+
+function afficherPanier() {
+
+    panierOperations.innerHTML =
+        "";
+
+
+    if (panier.length === 0) {
+
+        panierOperations.innerHTML =
+            "<p>Aucune opération ajoutée pour le moment.</p>";
+
+
+        totalPanier.textContent =
+            "0";
+
+
+        return;
+    }
+
+
+    let total = 0;
+
+
+    panier.forEach(
+        function (operation, index) {
+
+            total =
+                total +
+                Number(operation.montant);
+
+
+            const ligne =
+                document.createElement("div");
+
+
+            ligne.className =
+                "ligne-panier";
+
+
+            let description = "";
+
+
+            if (
+                operation.type_operation ===
+                "achat"
+            ) {
+
+                description =
+                    `${operation.nom_produit} × ${operation.quantite}`;
+
+            } else {
+
+                description =
+                    "Dette directe";
+
+
+                if (operation.note) {
+
+                    description =
+                        `${description} — ${operation.note}`;
+
+                }
+
+            }
+
+
+            ligne.innerHTML = `
+
+                <p>
+
+                    <strong>
+                        ${description}
+                    </strong>
+
+                    — ${Number(operation.montant).toLocaleString("fr-FR")} FCFA
+
+                    <button
+                        type="button"
+                        onclick="supprimerDuPanier(${index})"
+                    >
+                        Supprimer
+                    </button>
+
+                </p>
+
+            `;
+
+
+            panierOperations.appendChild(
+                ligne
+            );
+
+        }
+    );
+
+
+    totalPanier.textContent =
+        total.toLocaleString("fr-FR");
+
+}
+
+
+// ======================================================
+// SUPPRIMER DU PANIER
+// ======================================================
+
+function supprimerDuPanier(index) {
+
+    panier.splice(
+        index,
+        1
+    );
+
+
+    afficherPanier();
+
+}
+
+
+// ======================================================
+// ENREGISTRER TOUT LE PANIER
+// ======================================================
+
+formulaireOperation.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+
+        const etudiantId =
+            Number(etudiantOperation.value);
+
+
+        if (!etudiantId) {
+
+            messageOperation.textContent =
+                "Choisissez un étudiant.";
+
+            return;
+        }
+
+
+        if (panier.length === 0) {
+
+            messageOperation.textContent =
+                "Ajoutez au moins une opération.";
+
+            return;
+        }
+
+
+        messageOperation.textContent =
+            "Enregistrement en cours...";
+
+
+        const operationsPanier = panier.map(function (operation) {
+            return {
+                type_operation: operation.type_operation,
+                categorie: operation.categorie,
+                produit_id: operation.produit_id,
+                quantite: operation.quantite,
+                montant: operation.montant,
+                moyen_paiement: null,
+                note: operation.note
+            };
+        });
+
+        const { error: erreurEnregistrement } = await supabaseClient
+            .rpc("enregistrer_operations_panier_atomique", {
+                p_etudiant_id: etudiantId,
+                p_operations: operationsPanier
+            });
+
+        if (erreurEnregistrement) {
+            console.error(erreurEnregistrement);
+            messageOperation.textContent =
+                erreurEnregistrement.message ||
+                "Erreur lors de l'enregistrement des opérations.";
+            return;
+        }
+
+        // SUCCES
+
+        messageOperation.textContent =
+            "Toutes les opérations ont été enregistrées avec succès.";
+
+
+        formulaireOperation.reset();
+
+
+        panier = [];
+
+
+        afficherPanier();
+
+
+        infoProduit.textContent =
+            "Choisissez d'abord une catégorie et un produit.";
+
+
+        await chargerOperations();
+
+    }
+);
+
+
+// ======================================================
+// CHARGER HISTORIQUE
+// ======================================================
+
+async function chargerOperations() {
+
+    listeOperations.innerHTML =
+        "Chargement de l'historique...";
+
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("operations")
+
+        .select(`
+            id,
+            created_at,
+            type_operation,
+            categorie,
+            quantite,
+            montant,
+            note,
+
+            etudiants (
+                nom,
+                prenom
+            ),
+
+            produits (
+                nom
+            ),
+
+            administrateurs (
+                nom,
+                prenom
+            )
+        `)
+
+        .order(
+            "created_at",
+            {
+                ascending: false
+            }
+        );
+
+
+    if (error) {
+
+        console.error(error);
+
+        listeOperations.innerHTML =
+            "Impossible de charger l'historique.";
+
+        return;
+    }
+
+
+    toutesLesOperations =
+        data || [];
+
+
+    afficherOperations(
+        toutesLesOperations
+    );
+
+}
+
+
+// ======================================================
+// AFFICHER HISTORIQUE
+// ======================================================
+
+function afficherOperations(operations) {
+
+    listeOperations.innerHTML =
+        "";
+
+
+    if (
+        !operations ||
+        operations.length === 0
+    ) {
+
+        listeOperations.innerHTML =
+            "<p>Aucune opération enregistrée.</p>";
+
+        return;
+    }
+
+
+    operations.forEach(
+        function (operation) {
+
+            const carte =
+                document.createElement("div");
+
+
+            carte.className =
+                "carte-operation";
+
+
+            const nomEtudiant =
+                operation.etudiants
+                    ? `${operation.etudiants.prenom} ${operation.etudiants.nom}`
+                    : "Étudiant inconnu";
+
+
+            const date =
+                new Date(
+                    operation.created_at
+                ).toLocaleString("fr-FR");
+
+
+            const categorie =
+                operation.categorie
+                    ? operation.categorie.toUpperCase()
+                    : "-";
+
+
+            let titre = "";
+
+
+            if (
+                operation.type_operation ===
+                "achat"
+            ) {
+
+                titre =
+                    `ACHAT — ${categorie}`;
+
+            } else {
+
+                titre =
+                    `DETTE DIRECTE — ${categorie}`;
+
+            }
+
+
+            let detailsProduit =
+                "";
+
+
+            if (
+                operation.type_operation ===
+                "achat"
+            ) {
+
+                const nomProduit =
+                    operation.produits
+                        ? operation.produits.nom
+                        : "Produit inconnu";
+
+
+                detailsProduit = `
+
+                    <p>
+                        <strong>Produit :</strong>
+                        ${nomProduit}
+                    </p>
+
+                    <p>
+                        <strong>Quantité :</strong>
+                        ${operation.quantite}
+                    </p>
+
+                `;
+
+            }
+
+
+            let detailsNote =
+                "";
+
+
+            if (operation.note) {
+
+                detailsNote = `
+
+                    <p>
+                        <strong>Note :</strong>
+                        ${operation.note}
+                    </p>
+
+                `;
+
+            }
+
+
+            carte.innerHTML = `
+
+                <h4>${titre}</h4>
+
+                <p>
+                    <strong>Étudiant :</strong>
+                    ${nomEtudiant}
+                </p>
+
+                ${detailsProduit}
+
+                <p>
+                    <strong>Montant :</strong>
+                    ${Number(operation.montant).toLocaleString("fr-FR")} FCFA
+                </p>
+
+                ${detailsNote}
+
+                <p>
+                    <strong>Date :</strong>
+                    ${date}
+                </p>
+
+                <hr>
+
+            `;
+
+
+            listeOperations.appendChild(
+                carte
+            );
+
+        }
+    );
+
+}
+
+
+// ======================================================
+// RECHERCHE
+// ======================================================
+
+rechercheOperation.addEventListener(
+    "input",
+    function () {
+
+        const recherche =
+            rechercheOperation.value
+                .toLowerCase()
+                .trim();
+
+
+        if (!recherche) {
+
+            afficherOperations(
+                toutesLesOperations
+            );
+
+            return;
+        }
+
+
+        const resultat =
+            toutesLesOperations.filter(
+                function (operation) {
+
+                    const nomEtudiant =
+                        operation.etudiants
+                            ? `${operation.etudiants.prenom} ${operation.etudiants.nom}`.toLowerCase()
+                            : "";
+
+
+                    const nomProduit =
+                        operation.produits
+                            ? operation.produits.nom.toLowerCase()
+                            : "";
+
+
+                    const categorie =
+                        operation.categorie
+                            ? operation.categorie.toLowerCase()
+                            : "";
+
+
+                    return (
+
+                        nomEtudiant.includes(recherche)
+
+                        ||
+
+                        nomProduit.includes(recherche)
+
+                        ||
+
+                        categorie.includes(recherche)
+
+                    );
+
+                }
+            );
+
+
+        afficherOperations(
+            resultat
+        );
+
+    }
+);
+
+
+// ======================================================
+// DEMARRER
+// ======================================================
+
+async function demarrerPage() {
+
+    const autorise =
+        await verifierAdministrateur();
+
+
+    if (!autorise) {
+
+        return;
+    }
+
+
+    await chargerEtudiants();
+
+
+    await chargerProduits();
+
+
+    await chargerOperations();
+
+}
+
+
+demarrerPage();
+
+
+</script>
+
+</body>
+
+</html>

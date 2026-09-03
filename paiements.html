@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Paiements - Dr. Right</title>
+
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <h1>Dr. Right</h1>
+
+    <h2>Paiements</h2>
+
+    <p id="message-page">
+        Vérification de votre accès...
+    </p>
+
+
+    <button id="bouton-afficher-formulaire" type="button">
+        Enregistrer un paiement
+    </button>
+
+
+    <div id="zone-formulaire-paiement" style="display: none;">
+
+        <h3>Nouveau paiement</h3>
+
+
+        <form id="form-paiement">
+
+
+            <label for="etudiant-paiement">
+                Étudiant
+            </label>
+
+            <select id="etudiant-paiement" required>
+                <option value="">
+                    Chargement des étudiants...
+                </option>
+            </select>
+
+
+            <div id="resume-solde-etudiant">
+
+                <p>
+                    Solde Jus :
+                    <strong id="solde-jus">
+                        -
+                    </strong>
+                    FCFA
+                </p>
+
+                <p>
+                    Solde Manger :
+                    <strong id="solde-manger">
+                        -
+                    </strong>
+                    FCFA
+                </p>
+
+            </div>
+
+
+            <label for="categorie-paiement">
+                Catégorie à payer
+            </label>
+
+            <select id="categorie-paiement" required>
+
+                <option value="">
+                    -- Choisir la catégorie --
+                </option>
+
+                <option value="jus">
+                    Jus
+                </option>
+
+                <option value="manger">
+                    Manger
+                </option>
+
+            </select>
+
+
+            <label for="montant-paiement">
+                Montant payé (FCFA)
+            </label>
+
+            <input
+                id="montant-paiement"
+                type="number"
+                min="1"
+                step="1"
+                placeholder="Exemple : 5000"
+                required
+            >
+
+
+            <label for="moyen-paiement">
+                Moyen de paiement
+            </label>
+
+            <select id="moyen-paiement" required>
+
+                <option value="">
+                    -- Choisir --
+                </option>
+
+                <option value="Espèces">
+                    Espèces
+                </option>
+
+                <option value="Mixx by Yas">
+                    Mixx by Yas
+                </option>
+
+                <option value="Moov Money">
+                    Moov Money
+                </option>
+
+            </select>
+
+
+            <button type="submit">
+                Enregistrer le paiement
+            </button>
+
+        </form>
+
+
+        <p id="message-paiement"></p>
+
+    </div>
+
+
+    <h3>Historique des paiements</h3>
+
+
+    <input
+        type="search"
+        id="recherche-paiement"
+        placeholder="Rechercher un étudiant ou une catégorie"
+    >
+
+
+    <div id="liste-paiements">
+        Chargement de l'historique...
+    </div>
+
+
+    <br>
+
+
+    <a href="administrateur.html">
+        <button type="button">
+            Retour au tableau de bord
+        </button>
+    </a>
+
+
+</div>
+
+
+
+
+<script>
+
+// ==========================================
+// ELEMENTS
+// ==========================================
+
+const messagePage =
+    document.getElementById("message-page");
+
+
+const boutonAfficherFormulaire =
+    document.getElementById("bouton-afficher-formulaire");
+
+
+const zoneFormulairePaiement =
+    document.getElementById("zone-formulaire-paiement");
+
+
+const formulairePaiement =
+    document.getElementById("form-paiement");
+
+
+const etudiantPaiement =
+    document.getElementById("etudiant-paiement");
+
+
+const soldeJus =
+    document.getElementById("solde-jus");
+
+
+const soldeManger =
+    document.getElementById("solde-manger");
+
+
+const categoriePaiement =
+    document.getElementById("categorie-paiement");
+
+
+const montantPaiement =
+    document.getElementById("montant-paiement");
+
+
+const moyenPaiement =
+    document.getElementById("moyen-paiement");
+
+
+const messagePaiement =
+    document.getElementById("message-paiement");
+
+
+const listePaiements =
+    document.getElementById("liste-paiements");
+
+
+const recherchePaiement =
+    document.getElementById("recherche-paiement");
+
+
+// ==========================================
+// DONNEES
+// ==========================================
+
+let administrateurConnecte = null;
+
+let tousLesEtudiants = [];
+
+let tousLesPaiements = [];
+
+let etudiantSelectionne = null;
+
+
+// ==========================================
+// VERIFIER ADMINISTRATEUR
+// ==========================================
+
+async function verifierAdministrateur() {
+
+    const {
+        data: sessionData
+    } = await supabaseClient
+        .auth
+        .getSession();
+
+
+    const session =
+        sessionData.session;
+
+
+    if (!session) {
+
+        window.location.href =
+            "./connexion-administrateur.html";
+
+        return false;
+    }
+
+
+    const {
+        data: administrateur,
+        error
+    } = await supabaseClient
+
+        .from("administrateurs")
+
+        .select("*")
+
+        .eq(
+            "auth_user_id",
+            session.user.id
+        )
+
+        .eq(
+            "statut",
+            "actif"
+        )
+
+        .maybeSingle();
+
+
+    if (
+        error ||
+        !administrateur
+    ) {
+
+        await supabaseClient
+            .auth
+            .signOut();
+
+
+        window.location.href =
+            "./connexion-administrateur.html";
+
+        return false;
+    }
+
+
+    administrateurConnecte =
+        administrateur;
+
+
+    messagePage.textContent =
+        `Connecté : ${administrateur.prenom} ${administrateur.nom}`;
+
+
+    return true;
+}
+
+
+// ==========================================
+// CHARGER ETUDIANTS
+// ==========================================
+
+async function chargerEtudiants() {
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("etudiants")
+
+        .select(`
+            id,
+            nom,
+            prenom,
+            dette_jus,
+            dette_manger
+        `)
+
+        .eq(
+            "statut",
+            "actif"
+        )
+
+        .order(
+            "nom",
+            {
+                ascending: true
+            }
+        );
+
+
+    if (error) {
+
+        console.error(error);
+
+        etudiantPaiement.innerHTML =
+            '<option value="">Erreur de chargement</option>';
+
+        return;
+    }
+
+
+    tousLesEtudiants =
+        data || [];
+
+
+    etudiantPaiement.innerHTML =
+        '<option value="">-- Choisir un étudiant --</option>';
+
+
+    tousLesEtudiants.forEach(
+        function (etudiant) {
+
+            const option =
+                document.createElement("option");
+
+
+            option.value =
+                etudiant.id;
+
+
+            option.textContent =
+                `${etudiant.prenom} ${etudiant.nom}`;
+
+
+            etudiantPaiement.appendChild(option);
+
+        }
+    );
+
+}
+
+
+// ==========================================
+// AFFICHER SOLDE ETUDIANT
+// ==========================================
+
+etudiantPaiement.addEventListener(
+    "change",
+    function () {
+
+        const etudiantId =
+            Number(etudiantPaiement.value);
+
+
+        etudiantSelectionne =
+            tousLesEtudiants.find(
+                function (etudiant) {
+
+                    return (
+                        Number(etudiant.id) ===
+                        etudiantId
+                    );
+
+                }
+            );
+
+
+        if (!etudiantSelectionne) {
+
+            soldeJus.textContent =
+                "-";
+
+
+            soldeManger.textContent =
+                "-";
+
+
+            return;
+        }
+
+
+        soldeJus.textContent =
+            Number(
+                etudiantSelectionne.dette_jus
+            ) || 0;
+
+
+        soldeManger.textContent =
+            Number(
+                etudiantSelectionne.dette_manger
+            ) || 0;
+
+    }
+);
+
+
+// ==========================================
+// AFFICHER / CACHER FORMULAIRE
+// ==========================================
+
+boutonAfficherFormulaire.addEventListener(
+    "click",
+    function () {
+
+        if (
+            zoneFormulairePaiement.style.display ===
+            "none"
+        ) {
+
+            zoneFormulairePaiement.style.display =
+                "block";
+
+
+            boutonAfficherFormulaire.textContent =
+                "Annuler";
+
+
+        } else {
+
+            zoneFormulairePaiement.style.display =
+                "none";
+
+
+            boutonAfficherFormulaire.textContent =
+                "Enregistrer un paiement";
+
+        }
+
+    }
+);
+
+
+// ==========================================
+// ENREGISTRER PAIEMENT
+// ==========================================
+
+formulairePaiement.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+
+        const etudiantId =
+            Number(etudiantPaiement.value);
+
+
+        const categorie =
+            categoriePaiement.value;
+
+
+        const montant =
+            Number(montantPaiement.value);
+
+
+        const moyen =
+            moyenPaiement.value;
+
+
+        // ==================================
+        // VERIFICATIONS
+        // ==================================
+
+        if (!etudiantId) {
+
+            messagePaiement.textContent =
+                "Choisissez un étudiant.";
+
+            return;
+        }
+
+
+        if (
+            categorie !== "jus" &&
+            categorie !== "manger"
+        ) {
+
+            messagePaiement.textContent =
+                "Choisissez la catégorie Jus ou Manger.";
+
+            return;
+        }
+
+
+        if (
+            !montant ||
+            montant <= 0
+        ) {
+
+            messagePaiement.textContent =
+                "Entrez un montant valide.";
+
+            return;
+        }
+
+
+        if (!moyen) {
+
+            messagePaiement.textContent =
+                "Choisissez le moyen de paiement.";
+
+            return;
+        }
+
+
+        messagePaiement.textContent =
+            "Enregistrement du paiement...";
+
+
+        const { error: erreurPaiement } = await supabaseClient
+            .rpc("enregistrer_paiement_atomique", {
+                p_etudiant_id: etudiantId,
+                p_categorie: categorie,
+                p_montant: montant,
+                p_moyen_paiement: moyen,
+                p_admin_id: administrateurConnecte.id
+            });
+
+        if (erreurPaiement) {
+            console.error(erreurPaiement);
+            messagePaiement.textContent =
+                erreurPaiement.message ||
+                "Impossible d'enregistrer le paiement.";
+            return;
+        }
+
+        // ==================================
+        // SUCCES
+        // ==================================
+
+        messagePaiement.textContent =
+            "Paiement enregistré avec succès.";
+
+
+        formulairePaiement.reset();
+
+
+        soldeJus.textContent =
+            "-";
+
+
+        soldeManger.textContent =
+            "-";
+
+
+        etudiantSelectionne =
+            null;
+
+
+        await chargerEtudiants();
+
+
+        await chargerPaiements();
+
+    }
+);
+
+
+// ==========================================
+// CHARGER PAIEMENTS
+// ==========================================
+
+async function chargerPaiements() {
+
+    listePaiements.innerHTML =
+        "Chargement de l'historique...";
+
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("paiements")
+
+        .select(`
+            id,
+            created_at,
+            categorie,
+            montant,
+            moyen_paiement,
+
+            etudiants (
+                nom,
+                prenom
+            ),
+
+            administrateurs (
+                nom,
+                prenom
+            )
+        `)
+
+        .order(
+            "created_at",
+            {
+                ascending: false
+            }
+        );
+
+
+    if (error) {
+
+        console.error(error);
+
+        listePaiements.innerHTML =
+            "Impossible de charger l'historique des paiements.";
+
+        return;
+    }
+
+
+    tousLesPaiements =
+        data || [];
+
+
+    afficherPaiements(
+        tousLesPaiements
+    );
+
+}
+
+
+// ==========================================
+// AFFICHER PAIEMENTS
+// ==========================================
+
+function afficherPaiements(paiements) {
+
+    listePaiements.innerHTML =
+        "";
+
+
+    if (
+        !paiements ||
+        paiements.length === 0
+    ) {
+
+        listePaiements.innerHTML =
+            "<p>Aucun paiement enregistré.</p>";
+
+        return;
+    }
+
+
+    paiements.forEach(
+        function (paiement) {
+
+            const carte =
+                document.createElement("div");
+
+
+            carte.className =
+                "carte-operation";
+
+
+            const etudiant =
+                paiement.etudiants
+                    ? `${paiement.etudiants.prenom} ${paiement.etudiants.nom}`
+                    : "Étudiant inconnu";
+
+
+            const administrateur =
+                paiement.administrateurs
+                    ? `${paiement.administrateurs.prenom} ${paiement.administrateurs.nom}`
+                    : "Administrateur inconnu";
+
+
+            const date =
+                new Date(
+                    paiement.created_at
+                ).toLocaleString(
+                    "fr-FR"
+                );
+
+
+            carte.innerHTML = `
+
+                <h4>
+                    PAIEMENT — ${paiement.categorie.toUpperCase()}
+                </h4>
+
+                <p>
+                    <strong>Étudiant :</strong>
+                    ${etudiant}
+                </p>
+
+                <p>
+                    <strong>Montant payé :</strong>
+                    ${paiement.montant} FCFA
+                </p>
+
+                <p>
+                    <strong>Moyen de paiement :</strong>
+                    ${paiement.moyen_paiement}
+                </p>
+
+                <p>
+                    <strong>Date :</strong>
+                    ${date}
+                </p>
+
+                <p>
+                    <strong>Administrateur :</strong>
+                    ${administrateur}
+                </p>
+
+                <hr>
+
+            `;
+
+
+            listePaiements.appendChild(
+                carte
+            );
+
+        }
+    );
+
+}
+
+
+// ==========================================
+// RECHERCHE
+// ==========================================
+
+recherchePaiement.addEventListener(
+    "input",
+    function () {
+
+        const recherche =
+            recherchePaiement.value
+                .toLowerCase()
+                .trim();
+
+
+        if (!recherche) {
+
+            afficherPaiements(
+                tousLesPaiements
+            );
+
+            return;
+        }
+
+
+        const resultat =
+            tousLesPaiements.filter(
+                function (paiement) {
+
+                    const etudiant =
+                        paiement.etudiants
+                            ? `${paiement.etudiants.prenom} ${paiement.etudiants.nom}`
+                                .toLowerCase()
+                            : "";
+
+
+                    const categorie =
+                        paiement.categorie
+                            .toLowerCase();
+
+
+                    const moyen =
+                        paiement.moyen_paiement
+                            .toLowerCase();
+
+
+                    return (
+
+                        etudiant.includes(recherche)
+
+                        ||
+
+                        categorie.includes(recherche)
+
+                        ||
+
+                        moyen.includes(recherche)
+
+                    );
+
+                }
+            );
+
+
+        afficherPaiements(resultat);
+
+    }
+);
+
+
+// ==========================================
+// DEMARRAGE
+// ==========================================
+
+async function demarrerPage() {
+
+    const autorise =
+        await verifierAdministrateur();
+
+
+    if (!autorise) {
+
+        return;
+    }
+
+
+    await chargerEtudiants();
+
+
+    await chargerPaiements();
+
+}
+
+
+demarrerPage();
+
+
+</script>
+
+
+</body>
+
+</html>

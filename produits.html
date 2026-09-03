@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Produits - Dr. Right</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <h1>Dr. Right</h1>
+
+    <h2>Gestion des produits</h2>
+
+
+    <!-- ========================================= -->
+    <!-- MESSAGE GENERAL                           -->
+    <!-- ========================================= -->
+
+    <p id="message-page">
+        Vérification de votre accès...
+    </p>
+
+
+    <!-- ========================================= -->
+    <!-- BOUTON AJOUT                              -->
+    <!-- ========================================= -->
+
+    <button
+        id="bouton-ajouter-produit"
+        type="button"
+    >
+        Ajouter un produit
+    </button>
+
+
+    <!-- ========================================= -->
+    <!-- FORMULAIRE AJOUT                          -->
+    <!-- ========================================= -->
+
+    <div
+        id="zone-formulaire-produit"
+        style="display: none;"
+    >
+
+        <h3>Nouveau produit</h3>
+
+
+        <form id="form-ajout-produit">
+
+
+            <input
+                id="nom-produit"
+                type="text"
+                placeholder="Nom du produit"
+                required
+            >
+
+
+            <input
+                id="categorie-produit"
+                type="text"
+                placeholder="Catégorie"
+                required
+            >
+
+
+            <input
+                id="prix-produit"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Prix (FCFA)"
+                required
+            >
+
+
+            <button type="submit">
+                Enregistrer le produit
+            </button>
+
+
+        </form>
+
+
+        <p id="message-ajout-produit"></p>
+
+    </div>
+
+
+    <br>
+
+
+    <!-- ========================================= -->
+    <!-- RECHERCHE                                 -->
+    <!-- ========================================= -->
+
+    <input
+        type="search"
+        id="recherche-produit"
+        placeholder="Rechercher un produit..."
+    >
+
+
+    <br>
+    <br>
+
+
+    <!-- ========================================= -->
+    <!-- LISTE DES PRODUITS                        -->
+    <!-- ========================================= -->
+
+    <div id="liste-produits">
+
+        Chargement des produits...
+
+    </div>
+
+
+    <br>
+
+
+    <!-- ========================================= -->
+    <!-- RETOUR                                    -->
+    <!-- ========================================= -->
+
+    <a href="administrateur.html">
+
+        <button type="button">
+            Retour au tableau de bord
+        </button>
+
+    </a>
+
+</div>
+
+
+<!-- ========================================= -->
+<!-- SUPABASE                                  -->
+<!-- ========================================= -->
+
+
+
+<script>
+
+// ==========================================
+// ELEMENTS
+// ==========================================
+
+const messagePage =
+    document.getElementById(
+        "message-page"
+    );
+
+
+const boutonAjouterProduit =
+    document.getElementById(
+        "bouton-ajouter-produit"
+    );
+
+
+const zoneFormulaireProduit =
+    document.getElementById(
+        "zone-formulaire-produit"
+    );
+
+
+const formulaireAjoutProduit =
+    document.getElementById(
+        "form-ajout-produit"
+    );
+
+
+const messageAjoutProduit =
+    document.getElementById(
+        "message-ajout-produit"
+    );
+
+
+const listeProduits =
+    document.getElementById(
+        "liste-produits"
+    );
+
+
+const rechercheProduit =
+    document.getElementById(
+        "recherche-produit"
+    );
+
+
+// ==========================================
+// DONNEES
+// ==========================================
+
+let tousLesProduits = [];
+
+
+// ==========================================
+// VERIFICATION ADMINISTRATEUR
+// ==========================================
+
+async function verifierAdministrateur() {
+
+
+    messagePage.textContent =
+        "Vérification de votre accès...";
+
+
+    const {
+        data: sessionData,
+        error: sessionError
+    } = await supabaseClient
+        .auth
+        .getSession();
+
+
+    if (
+        sessionError ||
+        !sessionData.session
+    ) {
+
+        window.location.href =
+            "./connexion-administrateur.html";
+
+        return false;
+    }
+
+
+    const session =
+        sessionData.session;
+
+
+    const {
+        data: administrateur,
+        error
+    } = await supabaseClient
+
+        .from("administrateurs")
+
+        .select("id, prenom, nom")
+
+        .eq(
+            "auth_user_id",
+            session.user.id
+        )
+
+        .eq(
+            "statut",
+            "actif"
+        )
+
+        .maybeSingle();
+
+
+    if (
+        error ||
+        !administrateur
+    ) {
+
+        await supabaseClient
+            .auth
+            .signOut();
+
+
+        window.location.href =
+            "./connexion-administrateur.html";
+
+        return false;
+    }
+
+
+    messagePage.textContent =
+        `Connecté : ${administrateur.prenom || ""} ${administrateur.nom || ""}`;
+
+
+    return true;
+
+}
+
+
+// ==========================================
+// CHARGER LES PRODUITS
+// ==========================================
+
+async function chargerProduits() {
+
+
+    listeProduits.innerHTML =
+        "Chargement des produits...";
+
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("produits")
+
+        .select(`
+            id,
+            created_at,
+            nom,
+            categorie,
+            prix,
+            actif
+        `)
+
+        .order(
+            "nom",
+            {
+                ascending: true
+            }
+        );
+
+
+    if (error) {
+
+        console.error(
+            "Erreur chargement produits :",
+            error
+        );
+
+
+        listeProduits.innerHTML =
+            "Impossible de charger les produits.";
+
+        return;
+    }
+
+
+    tousLesProduits =
+        data || [];
+
+
+    afficherProduits(
+        tousLesProduits
+    );
+
+}
+
+
+// ==========================================
+// AFFICHER LES PRODUITS
+// ==========================================
+
+function afficherProduits(produits) {
+
+
+    listeProduits.innerHTML =
+        "";
+
+
+    if (
+        !produits ||
+        produits.length === 0
+    ) {
+
+        listeProduits.innerHTML =
+            "<p>Aucun produit trouvé.</p>";
+
+        return;
+    }
+
+
+    produits.forEach(
+        function (produit) {
+
+
+            const carte =
+                document.createElement("div");
+
+
+            carte.className =
+                "carte-operation";
+
+
+            const statut =
+                produit.actif
+                    ? "Actif"
+                    : "Inactif";
+
+
+            const boutonActivation =
+                produit.actif
+                    ? "Désactiver"
+                    : "Activer";
+
+
+            carte.innerHTML = `
+
+                <h3>
+                    ${echapperHTML(
+                        produit.nom || ""
+                    )}
+                </h3>
+
+
+                <p>
+                    <strong>Catégorie :</strong>
+                    ${echapperHTML(
+                        produit.categorie || "Non renseignée"
+                    )}
+                </p>
+
+
+                <p>
+                    <strong>Prix :</strong>
+                    ${Number(produit.prix || 0).toLocaleString("fr-FR")}
+                    FCFA
+                </p>
+
+
+                <p>
+                    <strong>Statut :</strong>
+                    ${statut}
+                </p>
+
+
+                <button
+                    type="button"
+                    class="bouton-modifier"
+                >
+                    Modifier
+                </button>
+
+
+                <button
+                    type="button"
+                    class="bouton-activer"
+                >
+                    ${boutonActivation}
+                </button>
+
+
+                <button
+                    type="button"
+                    class="bouton-supprimer"
+                >
+                    Supprimer définitivement
+                </button>
+
+
+                <div
+                    class="zone-modification"
+                    style="display: none;"
+                >
+
+                    <h4>
+                        Modifier le produit
+                    </h4>
+
+
+                    <form class="form-modification">
+
+
+                        <input
+                            class="modification-nom"
+                            type="text"
+                            value="${echapperAttribut(
+                                produit.nom || ""
+                            )}"
+                            placeholder="Nom"
+                            required
+                        >
+
+
+                        <input
+                            class="modification-categorie"
+                            type="text"
+                            value="${echapperAttribut(
+                                produit.categorie || ""
+                            )}"
+                            placeholder="Catégorie"
+                            required
+                        >
+
+
+                        <input
+                            class="modification-prix"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value="${produit.prix || 0}"
+                            placeholder="Prix"
+                            required
+                        >
+
+
+                        <button type="submit">
+                            Enregistrer
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="bouton-annuler"
+                        >
+                            Annuler
+                        </button>
+
+
+                        <p class="message-modification"></p>
+
+
+                    </form>
+
+                </div>
+
+            `;
+
+
+            // ==================================
+            // ELEMENTS DE LA CARTE
+            // ==================================
+
+            const boutonModifier =
+                carte.querySelector(
+                    ".bouton-modifier"
+                );
+
+
+            const boutonActiver =
+                carte.querySelector(
+                    ".bouton-activer"
+                );
+
+
+            const boutonSupprimer =
+                carte.querySelector(
+                    ".bouton-supprimer"
+                );
+
+
+            const zoneModification =
+                carte.querySelector(
+                    ".zone-modification"
+                );
+
+
+            const formulaireModification =
+                carte.querySelector(
+                    ".form-modification"
+                );
+
+
+            const boutonAnnuler =
+                carte.querySelector(
+                    ".bouton-annuler"
+                );
+
+
+            const messageModification =
+                carte.querySelector(
+                    ".message-modification"
+                );
+
+
+            // ==================================
+            // MODIFIER
+            // ==================================
+
+            boutonModifier.addEventListener(
+                "click",
+                function () {
+
+                    zoneModification.style.display =
+                        "block";
+
+                    boutonModifier.style.display =
+                        "none";
+
+                }
+            );
+
+
+            // ==================================
+            // ANNULER MODIFICATION
+            // ==================================
+
+            boutonAnnuler.addEventListener(
+                "click",
+                function () {
+
+                    zoneModification.style.display =
+                        "none";
+
+                    boutonModifier.style.display =
+                        "inline-block";
+
+                }
+            );
+
+
+            // ==================================
+            // ENREGISTRER MODIFICATION
+            // ==================================
+
+            formulaireModification.addEventListener(
+                "submit",
+                async function (event) {
+
+                    event.preventDefault();
+
+
+                    const nouveauNom =
+                        carte.querySelector(
+                            ".modification-nom"
+                        )
+                        .value
+                        .trim();
+
+
+                    const nouvelleCategorie =
+                        carte.querySelector(
+                            ".modification-categorie"
+                        )
+                        .value
+                        .trim();
+
+
+                    const nouveauPrix =
+                        Number(
+                            carte.querySelector(
+                                ".modification-prix"
+                            )
+                            .value
+                        );
+
+
+                    if (
+                        !nouveauNom ||
+                        !nouvelleCategorie ||
+                        nouveauPrix < 0 ||
+                        !Number.isFinite(nouveauPrix)
+                    ) {
+
+                        messageModification.textContent =
+                            "Veuillez saisir des informations valides.";
+
+                        return;
+                    }
+
+
+                    messageModification.textContent =
+                        "Modification en cours...";
+
+
+                    const {
+                        error
+                    } = await supabaseClient
+
+                        .from("produits")
+
+                        .update({
+
+                            nom:
+                                nouveauNom,
+
+                            categorie:
+                                nouvelleCategorie,
+
+                            prix:
+                                nouveauPrix
+
+                        })
+
+                        .eq(
+                            "id",
+                            produit.id
+                        );
+
+
+                    if (error) {
+
+                        console.error(
+                            "Erreur modification produit :",
+                            error
+                        );
+
+
+                        messageModification.textContent =
+                            "Impossible de modifier le produit.";
+
+                        return;
+                    }
+
+
+                    await chargerProduits();
+
+                }
+            );
+
+
+            // ==================================
+            // ACTIVER / DESACTIVER
+            // ==================================
+
+            boutonActiver.addEventListener(
+                "click",
+                async function () {
+
+
+                    const nouvelEtat =
+                        !produit.actif;
+
+
+                    boutonActiver.disabled =
+                        true;
+
+
+                    const {
+                        error
+                    } = await supabaseClient
+
+                        .from("produits")
+
+                        .update({
+
+                            actif:
+                                nouvelEtat
+
+                        })
+
+                        .eq(
+                            "id",
+                            produit.id
+                        );
+
+
+                    if (error) {
+
+                        console.error(
+                            "Erreur changement statut :",
+                            error
+                        );
+
+
+                        alert(
+                            "Impossible de modifier le statut du produit."
+                        );
+
+
+                        boutonActiver.disabled =
+                            false;
+
+                        return;
+                    }
+
+
+                    await chargerProduits();
+
+                }
+            );
+
+
+            // ==================================
+            // SUPPRESSION DEFINITIVE
+            // ==================================
+
+            boutonSupprimer.addEventListener(
+                "click",
+                async function () {
+
+
+                    const confirmation =
+                        confirm(
+                            `Voulez-vous vraiment supprimer définitivement le produit "${produit.nom}" ?\n\nCette action est irréversible.`
+                        );
+
+
+                    if (!confirmation) {
+
+                        return;
+                    }
+
+
+                    boutonSupprimer.disabled =
+                        true;
+
+
+                    boutonSupprimer.textContent =
+                        "Vérification...";
+
+
+                    // ==================================
+                    // VERIFIER SI LE PRODUIT EST UTILISE
+                    // ==================================
+
+                    const {
+                        data: operations,
+                        error: erreurVerification
+                    } = await supabaseClient
+
+                        .from("operations")
+
+                        .select("id")
+
+                        .eq(
+                            "produit_id",
+                            produit.id
+                        )
+                        .limit(1);
+
+
+                    if (erreurVerification) {
+
+                        console.error(
+                            "Erreur vérification opérations :",
+                            erreurVerification
+                        );
+
+
+                        alert(
+                            "Impossible de vérifier si ce produit est utilisé."
+                        );
+
+
+                        boutonSupprimer.disabled =
+                            false;
+
+
+                        boutonSupprimer.textContent =
+                            "Supprimer définitivement";
+
+                        return;
+                    }
+
+
+                    if (
+                        operations &&
+                        operations.length > 0
+                    ) {
+
+                        alert(
+                            "Ce produit est déjà utilisé dans l'historique des opérations.\n\nIl ne peut pas être supprimé définitivement. Vous pouvez simplement le désactiver."
+                        );
+
+
+                        boutonSupprimer.disabled =
+                            false;
+
+
+                        boutonSupprimer.textContent =
+                            "Supprimer définitivement";
+
+                        return;
+                    }
+
+
+                    // ==================================
+                    // SUPPRESSION
+                    // ==================================
+
+                    boutonSupprimer.textContent =
+                        "Suppression...";
+
+
+                    const {
+                        error: erreurSuppression
+                    } = await supabaseClient
+
+                        .from("produits")
+
+                        .delete()
+
+                        .eq(
+                            "id",
+                            produit.id
+                        );
+
+
+                    if (erreurSuppression) {
+
+                        console.error(
+                            "Erreur suppression produit :",
+                            erreurSuppression
+                        );
+
+
+                        alert(
+                            "Impossible de supprimer le produit."
+                        );
+
+
+                        boutonSupprimer.disabled =
+                            false;
+
+
+                        boutonSupprimer.textContent =
+                            "Supprimer définitivement";
+
+                        return;
+                    }
+
+
+                    alert(
+                        "Produit supprimé définitivement."
+                    );
+
+
+                    await chargerProduits();
+
+                }
+            );
+
+
+            listeProduits.appendChild(
+                carte
+            );
+
+        }
+    );
+
+}
+
+
+// ==========================================
+// RECHERCHE
+// ==========================================
+
+rechercheProduit.addEventListener(
+    "input",
+    function () {
+
+
+        const recherche =
+            rechercheProduit
+                .value
+                .toLowerCase()
+                .trim();
+
+
+        if (!recherche) {
+
+            afficherProduits(
+                tousLesProduits
+            );
+
+            return;
+        }
+
+
+        const resultat =
+            tousLesProduits.filter(
+                function (produit) {
+
+
+                    const nom =
+                        (
+                            produit.nom ||
+                            ""
+                        )
+                        .toLowerCase();
+
+
+                    const categorie =
+                        (
+                            produit.categorie ||
+                            ""
+                        )
+                        .toLowerCase();
+
+
+                    return (
+
+                        nom.includes(recherche)
+
+                        ||
+
+                        categorie.includes(recherche)
+
+                    );
+
+                }
+            );
+
+
+        afficherProduits(
+            resultat
+        );
+
+    }
+);
+
+
+// ==========================================
+// AFFICHER / CACHER FORMULAIRE
+// ==========================================
+
+boutonAjouterProduit.addEventListener(
+    "click",
+    function () {
+
+
+        if (
+            zoneFormulaireProduit
+                .style
+                .display === "none"
+        ) {
+
+            zoneFormulaireProduit
+                .style
+                .display = "block";
+
+
+            boutonAjouterProduit.textContent =
+                "Annuler";
+
+        } else {
+
+            zoneFormulaireProduit
+                .style
+                .display = "none";
+
+
+            boutonAjouterProduit.textContent =
+                "Ajouter un produit";
+
+        }
+
+    }
+);
+
+
+// ==========================================
+// AJOUTER UN PRODUIT
+// ==========================================
+
+formulaireAjoutProduit.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+
+        const nom =
+            document
+                .getElementById(
+                    "nom-produit"
+                )
+                .value
+                .trim();
+
+
+        const categorie =
+            document
+                .getElementById(
+                    "categorie-produit"
+                )
+                .value
+                .trim();
+
+
+        const prix =
+            Number(
+                document
+                    .getElementById(
+                        "prix-produit"
+                    )
+                    .value
+            );
+
+
+        if (
+            !nom ||
+            !categorie ||
+            !Number.isFinite(prix) ||
+            prix < 0
+        ) {
+
+            messageAjoutProduit.textContent =
+                "Veuillez remplir correctement tous les champs.";
+
+            return;
+        }
+
+
+        messageAjoutProduit.textContent =
+            "Enregistrement du produit...";
+
+
+        const boutonEnregistrer =
+            formulaireAjoutProduit.querySelector(
+                'button[type="submit"]'
+            );
+
+
+        boutonEnregistrer.disabled =
+            true;
+
+
+        const {
+            error
+        } = await supabaseClient
+
+            .from("produits")
+
+            .insert({
+
+                nom:
+                    nom,
+
+                categorie:
+                    categorie,
+
+                prix:
+                    prix,
+
+                actif:
+                    true
+
+            });
+
+
+        if (error) {
+
+            console.error(
+                "Erreur ajout produit :",
+                error
+            );
+
+
+            messageAjoutProduit.textContent =
+                "Impossible d'ajouter le produit.";
+
+            boutonEnregistrer.disabled =
+                false;
+
+            return;
+        }
+
+
+        messageAjoutProduit.textContent =
+            "Produit ajouté avec succès.";
+
+
+        formulaireAjoutProduit.reset();
+
+
+        await chargerProduits();
+
+
+        setTimeout(
+            function () {
+
+                zoneFormulaireProduit
+                    .style
+                    .display = "none";
+
+
+                boutonAjouterProduit.textContent =
+                    "Ajouter un produit";
+
+
+                messageAjoutProduit.textContent =
+                    "";
+
+            },
+            1000
+        );
+
+
+        boutonEnregistrer.disabled =
+            false;
+
+    }
+);
+
+
+// ==========================================
+// SECURITE HTML
+// ==========================================
+
+function echapperHTML(texte) {
+
+    return String(texte)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+function echapperAttribut(texte) {
+
+    return echapperHTML(
+        texte
+    );
+
+}
+
+
+// ==========================================
+// DEMARRAGE
+// ==========================================
+
+async function demarrerPage() {
+
+
+    const autorise =
+        await verifierAdministrateur();
+
+
+    if (!autorise) {
+
+        return;
+    }
+
+
+    await chargerProduits();
+
+}
+
+
+demarrerPage();
+
+
+</script>
+
+</body>
+
+</html>

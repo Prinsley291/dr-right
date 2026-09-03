@@ -1,0 +1,488 @@
+/* =========================================
+   DR. RIGHT - STYLE GENERAL
+   ========================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+
+html {
+    min-height: 100%;
+}
+
+
+body {
+    margin: 0;
+    padding: 30px 15px 80px;
+    font-family: Arial, sans-serif;
+    background: #f4f7fb;
+
+    /* Les pages longues peuvent défiler normalement */
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+
+/* =========================================
+   CONTENEUR PRINCIPAL
+   ========================================= */
+
+.container {
+    background: white;
+
+    width: 85%;
+    max-width: 700px;
+
+    margin: 0 auto;
+
+    padding: 30px;
+
+    border-radius: 20px;
+
+    text-align: center;
+
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+
+/* =========================================
+   TITRES ET TEXTES
+   ========================================= */
+
+h1 {
+    color: #0b5ed7;
+    font-size: 40px;
+    margin-top: 0;
+}
+
+
+h2 {
+    font-size: 18px;
+    color: #444;
+}
+
+
+h3 {
+    color: #333;
+}
+
+
+p {
+    color: #666;
+}
+
+
+/* =========================================
+   BOUTONS
+   ========================================= */
+
+button {
+    width: 90%;
+
+    padding: 15px;
+
+    margin-top: 15px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: #0b5ed7;
+
+    color: white;
+
+    font-size: 16px;
+
+    cursor: pointer;
+}
+
+
+button:hover {
+    opacity: 0.8;
+}
+
+
+/* =========================================
+   CARTES ETUDIANTS
+   ========================================= */
+
+.carte-etudiant {
+    margin-top: 15px;
+
+    padding: 15px;
+
+    border: 1px solid #cccccc;
+
+    border-radius: 10px;
+
+    text-align: left;
+}
+
+
+.carte-etudiant h3 {
+    margin-top: 0;
+}
+
+
+/* =========================================
+   RECHERCHE ETUDIANT
+   ========================================= */
+
+#recherche-etudiant {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    margin-bottom: 15px;
+}
+
+
+/* =========================================
+   FORMULAIRES
+   ========================================= */
+
+input,
+select,
+textarea {
+    width: 100%;
+
+    padding: 12px;
+
+    margin-top: 5px;
+
+    border: 1px solid #cccccc;
+
+    border-radius: 10px;
+
+    font-size: 16px;
+
+    font-family: Arial, sans-serif;
+
+    background: white;
+}
+
+
+textarea {
+    min-height: 100px;
+
+    resize: vertical;
+}
+
+
+/* =========================================
+   PAGE OPERATIONS
+   ========================================= */
+
+#zone-formulaire-operation {
+    width: 100%;
+
+    margin-top: 25px;
+
+    padding-top: 10px;
+
+    box-sizing: border-box;
+}
+
+
+/* Formulaire */
+
+#form-operation {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 25px;
+
+    width: 100%;
+}
+
+
+/* Chaque groupe du formulaire */
+
+.bloc-operation {
+    width: 100%;
+
+    padding: 20px;
+
+    border: 1px solid #e0e0e0;
+
+    border-radius: 12px;
+
+    text-align: left;
+
+    background: #fafcff;
+}
+
+
+/* Titres dans le formulaire */
+
+.bloc-operation h3 {
+    margin-top: 0;
+
+    margin-bottom: 20px;
+
+    text-align: center;
+}
+
+
+/* Labels */
+
+#form-operation label {
+    display: block;
+
+    margin-top: 15px;
+
+    margin-bottom: 8px;
+
+    font-weight: bold;
+
+    color: #444;
+}
+
+
+/* Premier label d'un bloc */
+
+#form-operation label:first-of-type {
+    margin-top: 0;
+}
+
+
+/* Champs */
+
+#form-operation select,
+#form-operation input,
+#form-operation textarea {
+    width: 100%;
+
+    min-height: 48px;
+
+    margin: 0;
+
+    box-sizing: border-box;
+}
+
+
+/* Zone de précision facultative */
+
+#note-directe {
+    min-height: 100px;
+
+    padding: 12px;
+}
+
+
+/* =========================================
+   BOUTONS DANS LES OPERATIONS
+   ========================================= */
+
+#form-operation button {
+    width: 100%;
+
+    margin-top: 20px;
+
+    min-height: 50px;
+}
+
+
+/* =========================================
+   INFORMATION PRODUIT
+   ========================================= */
+
+#info-produit {
+    margin: 15px 0;
+
+    padding: 12px;
+
+    background: #eef5ff;
+
+    border-radius: 8px;
+
+    text-align: center;
+}
+
+
+/* =========================================
+   PANIER D'OPERATIONS
+   ========================================= */
+
+#panier-operations {
+    max-height: 350px;
+
+    overflow-y: auto;
+
+    padding-right: 5px;
+}
+
+
+/* Ligne individuelle du panier */
+
+.ligne-panier {
+    padding: 12px;
+
+    margin-bottom: 10px;
+
+    border: 1px solid #dddddd;
+
+    border-radius: 10px;
+
+    background: white;
+}
+
+
+.ligne-panier p {
+    margin: 0;
+}
+
+
+/* Le bouton supprimer est plus petit */
+
+.ligne-panier button {
+    width: auto;
+
+    padding: 8px 12px;
+
+    margin: 10px 0 0;
+
+    font-size: 14px;
+}
+
+
+/* =========================================
+   TOTAL PANIER
+   ========================================= */
+
+#total-panier {
+    font-size: 20px;
+
+    color: #0b5ed7;
+}
+
+
+/* =========================================
+   MESSAGE OPERATION
+   ========================================= */
+
+#message-operation {
+    margin-top: 20px;
+
+    margin-bottom: 15px;
+
+    font-weight: bold;
+
+    text-align: center;
+}
+
+
+/* =========================================
+   HISTORIQUE OPERATIONS
+   ========================================= */
+
+#recherche-operation {
+    width: 100%;
+
+    margin-top: 20px;
+
+    margin-bottom: 15px;
+}
+
+
+#liste-operations {
+    margin-top: 20px;
+
+    width: 100%;
+}
+
+
+/* Carte d'une opération */
+
+.carte-operation {
+    margin-top: 15px;
+
+    padding: 15px;
+
+    border: 1px solid #dddddd;
+
+    border-radius: 10px;
+
+    background: white;
+
+    text-align: left;
+}
+
+
+.carte-operation h4 {
+    margin-top: 0;
+
+    color: #0b5ed7;
+}
+
+
+.carte-operation p {
+    margin: 8px 0;
+}
+
+
+/* =========================================
+   RESPONSIVE TABLETTE / GRAND ECRAN
+   ========================================= */
+
+@media (min-width: 700px) {
+
+    body {
+        padding-top: 40px;
+    }
+
+
+    .container {
+        width: 90%;
+
+        max-width: 800px;
+
+        padding: 40px;
+    }
+
+
+    #form-operation {
+        gap: 30px;
+    }
+
+
+    .bloc-operation {
+        padding: 25px;
+    }
+
+}
+
+
+/* =========================================
+   PETITS ECRANS
+   ========================================= */
+
+@media (max-width: 480px) {
+
+    body {
+        padding: 15px 10px 60px;
+    }
+
+
+    .container {
+        width: 100%;
+
+        padding: 20px;
+
+        border-radius: 15px;
+    }
+
+
+    h1 {
+        font-size: 32px;
+    }
+
+
+    .bloc-operation {
+        padding: 15px;
+    }
+
+}
