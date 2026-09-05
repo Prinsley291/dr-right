@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Connexion étudiant - Dr. Right</title>
+
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <h1>Dr. Right</h1>
+
+    <h2>Connexion étudiant</h2>
+
+    <p>
+        Connectez-vous pour consulter votre situation.
+    </p>
+
+
+    <form id="form-connexion-etudiant">
+
+        <label for="email-etudiant">
+            E-mail
+        </label>
+
+        <input
+            type="email"
+            id="email-etudiant"
+            placeholder="Votre adresse e-mail"
+            required
+        >
+
+
+        <label for="mot-de-passe-etudiant">
+            Mot de passe
+        </label>
+
+        <input
+            type="password"
+            id="mot-de-passe-etudiant"
+            placeholder="Votre mot de passe"
+            required
+        >
+
+
+        <button type="submit" id="bouton-connexion">
+            Se connecter
+        </button>
+
+    </form>
+
+
+    <p id="message-connexion"></p>
+
+
+    <br>
+
+
+    <a href="index.html">
+        <button type="button">
+            Retour
+        </button>
+    </a>
+
+</div>
+
+
+
+
+<script>
+
+// ==========================================
+// ELEMENTS DE LA PAGE
+// ==========================================
+
+const formulaire =
+    document.getElementById(
+        "form-connexion-etudiant"
+    );
+
+
+const emailInput =
+    document.getElementById(
+        "email-etudiant"
+    );
+
+
+const motDePasseInput =
+    document.getElementById(
+        "mot-de-passe-etudiant"
+    );
+
+
+const message =
+    document.getElementById(
+        "message-connexion"
+    );
+
+
+const boutonConnexion =
+    document.getElementById(
+        "bouton-connexion"
+    );
+
+
+// ==========================================
+// VERIFIER SI L'ETUDIANT EST DEJA CONNECTE
+// ==========================================
+
+async function verifierConnexionExistante() {
+
+    try {
+
+        const {
+            data: userData,
+            error: userError
+        } = await supabaseClient
+            .auth
+            .getUser();
+
+
+        if (userError || !userData.user) {
+            return;
+        }
+
+
+        const utilisateur =
+            userData.user;
+
+
+        const {
+            data: etudiant,
+            error: erreurEtudiant
+        } = await supabaseClient
+
+            .from("etudiants")
+
+            .select("id, statut")
+
+            .eq(
+                "auth_user_id",
+                utilisateur.id
+            )
+
+            .eq(
+                "statut",
+                "actif"
+            )
+
+            .maybeSingle();
+
+
+        if (
+            !erreurEtudiant &&
+            etudiant
+        ) {
+
+            window.location.href =
+                "./etudiant.html";
+
+        }
+
+    } catch (erreurInattendue) {
+
+        // Une erreur ici ne doit pas empêcher d'utiliser le
+        // formulaire de connexion normalement.
+        console.error(
+            "Erreur vérification de session existante :",
+            erreurInattendue
+        );
+
+    }
+
+}
+
+
+// ==========================================
+// CONNEXION ETUDIANT
+// ==========================================
+
+formulaire.addEventListener(
+    "submit",
+    async function (event) {
+
+        event.preventDefault();
+
+        if (boutonConnexion.disabled) {
+            return;
+        }
+
+        const email =
+            emailInput.value
+                .trim();
+
+
+        const motDePasse =
+            motDePasseInput.value;
+
+
+        if (!email || !motDePasse) {
+
+            message.textContent =
+                "Veuillez remplir tous les champs.";
+
+            return;
+
+        }
+
+
+        message.textContent =
+            "Connexion en cours...";
+
+
+        boutonConnexion.disabled =
+            true;
+
+        let connexionReussie = false;
+
+        try {
+
+            // ======================================
+            // CONNEXION SUPABASE
+            // ======================================
+
+            const {
+                data,
+                error
+            } = await supabaseClient
+
+                .auth
+
+                .signInWithPassword({
+
+                    email: email,
+
+                    password: motDePasse
+
+                });
+
+
+            if (error) {
+
+                console.error(error);
+
+
+                message.textContent =
+                    "E-mail ou mot de passe incorrect.";
+
+
+                return;
+
+            }
+
+
+            if (!data.user) {
+
+                message.textContent =
+                    "Impossible de récupérer votre compte.";
+
+
+                return;
+
+            }
+
+
+            message.textContent =
+                "Vérification de votre compte étudiant...";
+
+
+            // ======================================
+            // VERIFIER LE LIEN AUTH / ETUDIANT
+            // ======================================
+
+            const {
+                data: etudiant,
+                error: erreurEtudiant
+            } = await supabaseClient
+
+                .from("etudiants")
+
+                .select(`
+                    id,
+                    nom,
+                    prenom,
+                    statut,
+                    auth_user_id
+                `)
+
+                .eq(
+                    "auth_user_id",
+                    data.user.id
+                )
+
+                .maybeSingle();
+
+
+            if (erreurEtudiant) {
+
+                console.error(erreurEtudiant);
+
+
+                await supabaseClient
+                    .auth
+                    .signOut();
+
+
+                message.textContent =
+                    "Erreur lors de la vérification de votre compte.";
+
+
+                return;
+
+            }
+
+
+            if (!etudiant) {
+
+                await supabaseClient
+                    .auth
+                    .signOut();
+
+
+                message.textContent =
+                    "Ce compte n'est associé à aucun étudiant.";
+
+
+                return;
+
+            }
+
+
+            // ======================================
+            // VERIFIER LE STATUT
+            // ======================================
+
+            if (
+                etudiant.statut !== "actif"
+            ) {
+
+                await supabaseClient
+                    .auth
+                    .signOut();
+
+
+                message.textContent =
+                    "Votre compte étudiant n'est pas actif.";
+
+
+                return;
+
+            }
+
+
+            // ======================================
+            // CONNEXION REUSSIE
+            // ======================================
+
+            connexionReussie = true;
+
+            message.textContent =
+                `Connexion réussie. Bienvenue ${etudiant.prenom}. Redirection...`;
+
+
+            setTimeout(
+                function () {
+
+                    window.location.href =
+                        "./etudiant.html";
+
+                },
+                1000
+            );
+
+        } catch (erreurInattendue) {
+
+            // Filet de sécurité : plus jamais bloqué sur
+            // "Connexion en cours..." si une exception inattendue
+            // survient (bug réseau, bug de librairie, etc.)
+            console.error(
+                "Erreur inattendue :",
+                erreurInattendue
+            );
+
+            message.textContent =
+                "Une erreur inattendue est survenue. Veuillez réessayer.";
+
+        } finally {
+
+            if (!connexionReussie) {
+                boutonConnexion.disabled = false;
+            }
+
+        }
+
+    }
+);
+
+
+// ==========================================
+// DEMARRAGE
+// ==========================================
+
+verifierConnexionExistante();
+
+
+</script>
+
+
+</body>
+
+</html>
