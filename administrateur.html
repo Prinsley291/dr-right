@@ -225,7 +225,10 @@
             );
 
             bienvenue.textContent =
-                "Une erreur inattendue est survenue. Veuillez réessayer ou vous reconnecter.";
+                "Erreur technique (diagnostic) : " +
+                (erreurInattendue && erreurInattendue.message
+                    ? erreurInattendue.name + " — " + erreurInattendue.message
+                    : String(erreurInattendue));
 
         }
 

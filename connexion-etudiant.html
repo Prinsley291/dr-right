@@ -392,7 +392,10 @@ formulaire.addEventListener(
             );
 
             message.textContent =
-                "Une erreur inattendue est survenue. Veuillez réessayer.";
+                "Erreur technique (diagnostic) : " +
+                (erreurInattendue && erreurInattendue.message
+                    ? erreurInattendue.name + " — " + erreurInattendue.message
+                    : String(erreurInattendue));
 
         } finally {
 
