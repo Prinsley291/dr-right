@@ -19,8 +19,9 @@
 
     <!-- Bibliothèque Supabase -->
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script>
     <script src="supabase-client.js"></script>
+    <script src="utils.js"></script>
 </head>
 
 
@@ -37,18 +38,28 @@
 
     <form id="form-connexion-admin">
 
+        <label for="email-admin">
+            E-mail
+        </label>
+
         <input
             id="email-admin"
             type="email"
             placeholder="Email administrateur"
+            autocomplete="username"
             required
         >
 
+
+        <label for="mot-de-passe-admin">
+            Mot de passe
+        </label>
 
         <input
             id="mot-de-passe-admin"
             type="password"
             placeholder="Mot de passe"
+            autocomplete="current-password"
             required
         >
 
@@ -60,7 +71,7 @@
     </form>
 
 
-    <p id="message-connexion"></p>
+    <p id="message-connexion" role="status"></p>
 
 <a href="index.html">
     Retour à l'accueil
@@ -73,78 +84,121 @@
 const formulaireAdmin =
     document.getElementById("form-connexion-admin");
 
+const message =
+    document.getElementById("message-connexion");
+
+
+// ==========================================
+// DEJA CONNECTE COMME ADMINISTRATEUR ?
+// ==========================================
+
+async function verifierConnexionExistante() {
+
+    const { data: sessionData } =
+        await supabaseClient.auth.getSession();
+
+    if (!sessionData || !sessionData.session) {
+        return;
+    }
+
+    const { data: administrateur } = await supabaseClient
+        .from("administrateurs")
+        .select("id")
+        .eq("auth_user_id", sessionData.session.user.id)
+        .eq("statut", "actif")
+        .maybeSingle();
+
+    if (administrateur) {
+        window.location.replace("./administrateur.html");
+    }
+
+}
+
+
+// ==========================================
+// CONNEXION
+// ==========================================
+
 formulaireAdmin.addEventListener(
     "submit",
     async function (event) {
 
         event.preventDefault();
 
-        const email =
-            document.getElementById("email-admin").value.trim();
+        const deverrouiller =
+            verrouillerFormulaire(formulaireAdmin);
 
-        const motDePasse =
-            document.getElementById("mot-de-passe-admin").value;
-
-        const message =
-            document.getElementById("message-connexion");
-
-        message.textContent = "Connexion en cours...";
-
-        const { data, error } =
-            await supabaseClient.auth.signInWithPassword({
-                email: email,
-                password: motDePasse
-            });
-
-        if (error) {
-            console.error(error);
-
-            message.textContent =
-                "Email ou mot de passe incorrect.";
-
+        if (!deverrouiller) {
             return;
         }
 
-        if (!data.user) {
-            message.textContent =
-                "Impossible de connecter cet utilisateur.";
+        try {
 
-            return;
+            const email =
+                document.getElementById("email-admin").value.trim();
+
+            const motDePasse =
+                document.getElementById("mot-de-passe-admin").value;
+
+            if (!email || !motDePasse) {
+                message.textContent =
+                    "Veuillez remplir tous les champs.";
+                return;
+            }
+
+            message.textContent = "Connexion en cours...";
+
+            const { data, error } =
+                await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: motDePasse
+                });
+
+            if (error || !data || !data.user) {
+
+                message.textContent =
+                    "Email ou mot de passe incorrect.";
+
+                return;
+            }
+
+            const {
+                data: administrateur,
+                error: erreurAdministrateur
+            } = await supabaseClient
+                .from("administrateurs")
+                .select("id")
+                .eq("auth_user_id", data.user.id)
+                .eq("statut", "actif")
+                .maybeSingle();
+
+            if (erreurAdministrateur || !administrateur) {
+
+                await supabaseClient.auth.signOut();
+
+                message.textContent =
+                    "Ce compte n'est pas autorisé comme administrateur actif.";
+
+                return;
+            }
+
+            message.textContent =
+                "Connexion réussie. Redirection...";
+
+            window.location.replace("./administrateur.html");
+
+        } finally {
+
+            deverrouiller();
+
         }
 
-        const {
-            data: administrateur,
-            error: erreurAdministrateur
-        } = await supabaseClient
-            .from("administrateurs")
-            .select("*")
-            .eq("auth_user_id", data.user.id)
-            .eq("statut", "actif")
-            .maybeSingle();
-
-        if (erreurAdministrateur || !administrateur) {
-
-            console.error(erreurAdministrateur);
-
-            await supabaseClient.auth.signOut();
-
-            message.textContent =
-                "Ce compte n'est pas autorisé comme administrateur actif.";
-
-            return;
-        }
-
-        message.textContent =
-    "Connexion réussie. Redirection...";
-
-setTimeout(function () {
-
-    window.location.href =
-        "./administrateur.html";
-
-}, 1000);
     }
 );
+
+
+verifierConnexionExistante();
+
 </script>
 
 </body>

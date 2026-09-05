@@ -9,8 +9,10 @@
     <title>Paiements - Dr. Right</title>
 
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script>
     <script src="supabase-client.js"></script>
+    <script src="utils.js"></script>
+    <script src="auth-admin.js"></script>
 </head>
 
 
@@ -246,83 +248,6 @@ let etudiantSelectionne = null;
 
 
 // ==========================================
-// VERIFIER ADMINISTRATEUR
-// ==========================================
-
-async function verifierAdministrateur() {
-
-    const {
-        data: sessionData
-    } = await supabaseClient
-        .auth
-        .getSession();
-
-
-    const session =
-        sessionData.session;
-
-
-    if (!session) {
-
-        window.location.href =
-            "./connexion-administrateur.html";
-
-        return false;
-    }
-
-
-    const {
-        data: administrateur,
-        error
-    } = await supabaseClient
-
-        .from("administrateurs")
-
-        .select("*")
-
-        .eq(
-            "auth_user_id",
-            session.user.id
-        )
-
-        .eq(
-            "statut",
-            "actif"
-        )
-
-        .maybeSingle();
-
-
-    if (
-        error ||
-        !administrateur
-    ) {
-
-        await supabaseClient
-            .auth
-            .signOut();
-
-
-        window.location.href =
-            "./connexion-administrateur.html";
-
-        return false;
-    }
-
-
-    administrateurConnecte =
-        administrateur;
-
-
-    messagePage.textContent =
-        `Connecté : ${administrateur.prenom} ${administrateur.nom}`;
-
-
-    return true;
-}
-
-
-// ==========================================
 // CHARGER ETUDIANTS
 // ==========================================
 
@@ -540,13 +465,10 @@ formulairePaiement.addEventListener(
         }
 
 
-        if (
-            !montant ||
-            montant <= 0
-        ) {
+        if (!montantEstValide(montant)) {
 
             messagePaiement.textContent =
-                "Entrez un montant valide.";
+                "Entrez un montant entier positif en FCFA.";
 
             return;
         }
@@ -561,54 +483,77 @@ formulairePaiement.addEventListener(
         }
 
 
-        messagePaiement.textContent =
-            "Enregistrement du paiement...";
+        const deverrouiller =
+            verrouillerFormulaire(formulairePaiement);
 
 
-        const { error: erreurPaiement } = await supabaseClient
-            .rpc("enregistrer_paiement_atomique", {
-                p_etudiant_id: etudiantId,
-                p_categorie: categorie,
-                p_montant: montant,
-                p_moyen_paiement: moyen,
-                p_admin_id: administrateurConnecte.id
-            });
+        if (!deverrouiller) {
 
-        if (erreurPaiement) {
-            console.error(erreurPaiement);
-            messagePaiement.textContent =
-                erreurPaiement.message ||
-                "Impossible d'enregistrer le paiement.";
             return;
         }
 
-        // ==================================
-        // SUCCES
-        // ==================================
 
-        messagePaiement.textContent =
-            "Paiement enregistré avec succès.";
+        try {
 
-
-        formulairePaiement.reset();
+            messagePaiement.textContent =
+                "Enregistrement du paiement...";
 
 
-        soldeJus.textContent =
-            "-";
+            // p_admin_id est conservé pour la compatibilité de
+            // signature ; côté serveur la fonction doit ignorer
+            // cette valeur et retrouver l'administrateur via
+            // auth.uid() (voir supabase/securite.sql).
+
+            const { error: erreurPaiement } = await supabaseClient
+                .rpc("enregistrer_paiement_atomique", {
+                    p_etudiant_id: etudiantId,
+                    p_categorie: categorie,
+                    p_montant: montant,
+                    p_moyen_paiement: moyen,
+                    p_admin_id: administrateurConnecte.id
+                });
+
+            if (erreurPaiement) {
+                console.error(erreurPaiement);
+                messagePaiement.textContent =
+                    erreurPaiement.message ||
+                    "Impossible d'enregistrer le paiement.";
+                return;
+            }
+
+            // ==================================
+            // SUCCES
+            // ==================================
+
+            messagePaiement.textContent =
+                "Paiement enregistré avec succès.";
 
 
-        soldeManger.textContent =
-            "-";
+            formulairePaiement.reset();
 
 
-        etudiantSelectionne =
-            null;
+            soldeJus.textContent =
+                "-";
 
 
-        await chargerEtudiants();
+            soldeManger.textContent =
+                "-";
 
 
-        await chargerPaiements();
+            etudiantSelectionne =
+                null;
+
+
+            await chargerEtudiants();
+
+
+            await chargerPaiements();
+
+        } finally {
+
+            deverrouiller();
+
+        }
 
     }
 );
@@ -713,29 +658,29 @@ function afficherPaiements(paiements) {
 
 
             const etudiant =
-                paiement.etudiants
-                    ? `${paiement.etudiants.prenom} ${paiement.etudiants.nom}`
-                    : "Étudiant inconnu";
+                echapperHTML(
+                    paiement.etudiants
+                        ? `${paiement.etudiants.prenom} ${paiement.etudiants.nom}`
+                        : "Étudiant inconnu"
+                );
 
 
             const administrateur =
-                paiement.administrateurs
-                    ? `${paiement.administrateurs.prenom} ${paiement.administrateurs.nom}`
-                    : "Administrateur inconnu";
+                echapperHTML(
+                    paiement.administrateurs
+                        ? `${paiement.administrateurs.prenom} ${paiement.administrateurs.nom}`
+                        : "Administrateur inconnu"
+                );
 
 
             const date =
-                new Date(
-                    paiement.created_at
-                ).toLocaleString(
-                    "fr-FR"
-                );
+                formaterDateHeure(paiement.created_at);
 
 
             carte.innerHTML = `
 
                 <h4>
-                    PAIEMENT — ${paiement.categorie.toUpperCase()}
+                    PAIEMENT — ${echapperHTML(String(paiement.categorie || "").toUpperCase())}
                 </h4>
 
                 <p>
@@ -745,12 +690,12 @@ function afficherPaiements(paiements) {
 
                 <p>
                     <strong>Montant payé :</strong>
-                    ${paiement.montant} FCFA
+                    ${formaterMontant(paiement.montant)} FCFA
                 </p>
 
                 <p>
                     <strong>Moyen de paiement :</strong>
-                    ${paiement.moyen_paiement}
+                    ${echapperHTML(paiement.moyen_paiement || "-")}
                 </p>
 
                 <p>
@@ -814,12 +759,12 @@ recherchePaiement.addEventListener(
 
 
                     const categorie =
-                        paiement.categorie
+                        String(paiement.categorie || "")
                             .toLowerCase();
 
 
                     const moyen =
-                        paiement.moyen_paiement
+                        String(paiement.moyen_paiement || "")
                             .toLowerCase();
 
 
@@ -853,14 +798,20 @@ recherchePaiement.addEventListener(
 
 async function demarrerPage() {
 
-    const autorise =
-        await verifierAdministrateur();
+    const administrateur =
+        await verifierAdministrateur({
+            elementMessage: messagePage
+        });
 
 
-    if (!autorise) {
+    if (!administrateur) {
 
         return;
     }
+
+
+    administrateurConnecte =
+        administrateur;
 
 
     await chargerEtudiants();

@@ -9,8 +9,9 @@
     <title>Mon compte - Dr. Right</title>
 
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js" integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script>
     <script src="supabase-client.js"></script>
+    <script src="utils.js"></script>
 </head>
 
 
@@ -249,8 +250,9 @@ async function chargerProfilEtudiant() {
         !userData.user
     ) {
 
-        window.location.href =
-            "./connexion-etudiant.html";
+        window.location.replace(
+            "./connexion-etudiant.html"
+        );
 
         return;
 
@@ -313,8 +315,9 @@ async function chargerProfilEtudiant() {
             .signOut();
 
 
-        window.location.href =
-            "./connexion-etudiant.html";
+        window.location.replace(
+            "./connexion-etudiant.html"
+        );
 
         return;
 
@@ -695,17 +698,17 @@ async function chargerHistorique() {
                 carte.innerHTML = `
 
                     <h4>
-                        PAIEMENT — ${element.categorie.toUpperCase()}
+                        PAIEMENT — ${echapperHTML(String(element.categorie || "").toUpperCase())}
                     </h4>
 
                     <p>
                         <strong>Montant payé :</strong>
-                        ${element.montant} FCFA
+                        ${formaterMontant(element.montant)} FCFA
                     </p>
 
                     <p>
                         <strong>Moyen :</strong>
-                        ${element.moyen}
+                        ${echapperHTML(element.moyen || "-")}
                     </p>
 
                     <p>
@@ -727,7 +730,7 @@ async function chargerHistorique() {
                 let contenu =
                     `
                     <h4>
-                        ${element.categorie.toUpperCase()}
+                        ${echapperHTML(String(element.categorie || "").toUpperCase())}
                     </h4>
                 `;
 
@@ -738,7 +741,7 @@ async function chargerHistorique() {
 
                         <p>
                             <strong>Produit :</strong>
-                            ${element.produit}
+                            ${echapperHTML(element.produit)}
                         </p>
 
                     `;
@@ -752,7 +755,7 @@ async function chargerHistorique() {
 
                             <p>
                                 <strong>Quantité :</strong>
-                                ${element.quantite}
+                                ${echapperHTML(element.quantite)}
                             </p>
 
                         `;
@@ -768,7 +771,7 @@ async function chargerHistorique() {
 
                         <p>
                             <strong>Dette ajoutée :</strong>
-                            ${element.montant} FCFA
+                            ${formaterMontant(element.montant)} FCFA
                         </p>
 
                     `;
@@ -780,7 +783,7 @@ async function chargerHistorique() {
 
                     <p>
                         <strong>Montant :</strong>
-                        ${element.montant} FCFA
+                        ${formaterMontant(element.montant)} FCFA
                     </p>
 
                 `;
@@ -792,7 +795,7 @@ async function chargerHistorique() {
 
                         <p>
                             <strong>Note :</strong>
-                            ${element.note}
+                            ${echapperHTML(element.note)}
                         </p>
 
                     `;
@@ -847,8 +850,28 @@ boutonDeconnexion.addEventListener(
             .signOut();
 
 
-        window.location.href =
-            "./index.html";
+        window.location.replace(
+            "./index.html"
+        );
+
+    }
+);
+
+
+// ==========================================
+// SESSION EXPIREE OU FERMEE AILLEURS
+// ==========================================
+
+supabaseClient.auth.onAuthStateChange(
+    function (evenement) {
+
+        if (evenement === "SIGNED_OUT") {
+
+            window.location.replace(
+                "./connexion-etudiant.html"
+            );
+
+        }
 
     }
 );
