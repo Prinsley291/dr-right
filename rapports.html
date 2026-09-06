@@ -400,77 +400,92 @@ async function verifierAdministrateur() {
     messagePage.textContent =
         "Vérification de votre accès...";
 
+    try {
 
-    const {
-        data: sessionData,
-        error: sessionError
-    } = await supabaseClient
-        .auth
-        .getSession();
-
-
-    if (
-        sessionError ||
-        !sessionData.session
-    ) {
-
-        window.location.href =
-            "./connexion-administrateur.html";
-
-        return false;
-    }
-
-
-    const session =
-        sessionData.session;
-
-
-    const {
-        data: administrateur,
-        error
-    } = await supabaseClient
-
-        .from("administrateurs")
-
-        .select(
-            "id, prenom, nom"
-        )
-
-        .eq(
-            "auth_user_id",
-            session.user.id
-        )
-
-        .eq(
-            "statut",
-            "actif"
-        )
-
-        .maybeSingle();
-
-
-    if (
-        error ||
-        !administrateur
-    ) {
-
-        await supabaseClient
+        const {
+            data: sessionData,
+            error: sessionError
+        } = await supabaseClient
             .auth
-            .signOut();
+            .getSession();
 
 
-        window.location.href =
-            "./connexion-administrateur.html";
+        if (
+            sessionError ||
+            !sessionData.session
+        ) {
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return false;
+        }
+
+
+        const session =
+            sessionData.session;
+
+
+        const {
+            data: administrateur,
+            error
+        } = await supabaseClient
+
+            .from("administrateurs")
+
+            .select(
+                "id, prenom, nom"
+            )
+
+            .eq(
+                "auth_user_id",
+                session.user.id
+            )
+
+            .eq(
+                "statut",
+                "actif"
+            )
+
+            .maybeSingle();
+
+
+        if (
+            error ||
+            !administrateur
+        ) {
+
+            await supabaseClient
+                .auth
+                .signOut();
+
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return false;
+        }
+
+
+        messagePage.textContent =
+            `Connecté : ${administrateur.prenom || ""} ${administrateur.nom || ""}`;
+
+
+        return true;
+
+    } catch (erreurInattendue) {
+
+        console.error(
+            "Erreur inattendue lors de la vérification :",
+            erreurInattendue
+        );
+
+        messagePage.textContent =
+            "Une erreur inattendue est survenue. Veuillez réessayer ou vous reconnecter.";
 
         return false;
+
     }
-
-
-    messagePage.textContent =
-        `Connecté : ${administrateur.prenom || ""} ${administrateur.nom || ""}`;
-
-
-    return true;
 }
 
 

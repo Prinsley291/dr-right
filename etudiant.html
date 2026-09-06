@@ -232,207 +232,229 @@ function afficherSolde(
 
 async function chargerProfilEtudiant() {
 
-    // --------------------------------------
-    // RECUPERER UTILISATEUR AUTH
-    // --------------------------------------
+    try {
 
-    const {
-        data: userData,
-        error: userError
-    } = await supabaseClient
-        .auth
-        .getUser();
+        // --------------------------------------
+        // RECUPERER UTILISATEUR AUTH
+        // --------------------------------------
 
-
-    if (
-        userError ||
-        !userData.user
-    ) {
-
-        window.location.href =
-            "./connexion-etudiant.html";
-
-        return;
-
-    }
-
-
-    const utilisateur =
-        userData.user;
-
-
-    // --------------------------------------
-    // RECUPERER ETUDIANT
-    // --------------------------------------
-
-    const {
-        data: etudiant,
-        error: erreurEtudiant
-    } = await supabaseClient
-
-        .from("etudiants")
-
-        .select(`
-            id,
-            nom,
-            prenom,
-            compagnie_id,
-            dette_jus,
-            dette_manger,
-            statut,
-            compagnies (
-                nom
-            )
-        `)
-
-        .eq(
-            "auth_user_id",
-            utilisateur.id
-        )
-
-        .eq(
-            "statut",
-            "actif"
-        )
-
-        .maybeSingle();
-
-
-    if (
-        erreurEtudiant ||
-        !etudiant
-    ) {
-
-        console.error(
-            erreurEtudiant
-        );
-
-
-        await supabaseClient
+        const {
+            data: userData,
+            error: userError
+        } = await supabaseClient
             .auth
-            .signOut();
+            .getUser();
 
 
-        window.location.href =
-            "./connexion-etudiant.html";
+        if (
+            userError ||
+            !userData.user
+        ) {
 
-        return;
+            window.location.href =
+                "./connexion-etudiant.html";
 
-    }
+            return;
 
-
-    etudiantConnecte =
-        etudiant;
-
-
-    // --------------------------------------
-    // AFFICHER PROFIL
-    // --------------------------------------
-
-    bienvenueEtudiant.textContent =
-        `Bienvenue ${etudiant.prenom} ${etudiant.nom}`;
+        }
 
 
-    nomEtudiant.textContent =
-        `${etudiant.prenom} ${etudiant.nom}`;
+        const utilisateur =
+            userData.user;
 
 
-    // --------------------------------------
-    // AFFICHER COMPAGNIE
-    // --------------------------------------
+        // --------------------------------------
+        // RECUPERER ETUDIANT
+        // --------------------------------------
 
-    if (
-        etudiant.compagnies &&
-        etudiant.compagnies.nom
-    ) {
+        const {
+            data: etudiant,
+            error: erreurEtudiant
+        } = await supabaseClient
+
+            .from("etudiants")
+
+            .select(`
+                id,
+                nom,
+                prenom,
+                compagnie_id,
+                dette_jus,
+                dette_manger,
+                statut,
+                compagnies (
+                    nom
+                )
+            `)
+
+            .eq(
+                "auth_user_id",
+                utilisateur.id
+            )
+
+            .eq(
+                "statut",
+                "actif"
+            )
+
+            .maybeSingle();
+
+
+        if (
+            erreurEtudiant ||
+            !etudiant
+        ) {
+
+            console.error(
+                erreurEtudiant
+            );
+
+
+            await supabaseClient
+                .auth
+                .signOut();
+
+
+            window.location.href =
+                "./connexion-etudiant.html";
+
+            return;
+
+        }
+
+
+        etudiantConnecte =
+            etudiant;
+
+
+        // --------------------------------------
+        // AFFICHER PROFIL
+        // --------------------------------------
+
+        bienvenueEtudiant.textContent =
+            `Bienvenue ${etudiant.prenom} ${etudiant.nom}`;
+
+
+        nomEtudiant.textContent =
+            `${etudiant.prenom} ${etudiant.nom}`;
+
+
+        // --------------------------------------
+        // AFFICHER COMPAGNIE
+        // --------------------------------------
+
+        if (
+            etudiant.compagnies &&
+            etudiant.compagnies.nom
+        ) {
+
+            compagnieEtudiant.textContent =
+                etudiant.compagnies.nom;
+
+        } else {
+
+            compagnieEtudiant.textContent =
+                "Non renseignée";
+
+        }
+
+
+        // --------------------------------------
+        // CALCUL DES SOLDES
+        // --------------------------------------
+
+        const detteJus =
+            Number(
+                etudiant.dette_jus
+            ) || 0;
+
+
+        const detteManger =
+            Number(
+                etudiant.dette_manger
+            ) || 0;
+
+
+        const total =
+            detteJus +
+            detteManger;
+
+
+        // --------------------------------------
+        // AFFICHAGE SOLDES
+        // --------------------------------------
+
+        soldeJus.textContent =
+            afficherSolde(
+                detteJus
+            );
+
+
+        soldeManger.textContent =
+            afficherSolde(
+                detteManger
+            );
+
+
+        soldeTotal.textContent =
+            afficherSolde(
+                total
+            );
+
+
+        // --------------------------------------
+        // MESSAGE GENERAL
+        // --------------------------------------
+
+        if (total < 0) {
+
+            messageCredit.textContent =
+                `Vous avez un crédit disponible de ${Math.abs(total)} FCFA.`;
+
+        }
+
+
+        else if (total > 0) {
+
+            messageCredit.textContent =
+                `Il vous reste ${total} FCFA à régler au total.`;
+
+        }
+
+
+        else {
+
+            messageCredit.textContent =
+                "Votre compte est actuellement équilibré.";
+
+        }
+
+
+        // --------------------------------------
+        // CHARGER HISTORIQUE
+        // --------------------------------------
+
+        await chargerHistorique();
+
+    } catch (erreurInattendue) {
+
+        // Filet de sécurité : plus jamais bloqué sur "Chargement..."
+        // si une exception inattendue survient.
+        console.error(
+            "Erreur inattendue lors du chargement du profil :",
+            erreurInattendue
+        );
+
+        bienvenueEtudiant.textContent =
+            "Une erreur inattendue est survenue.";
+
+        nomEtudiant.textContent =
+            "—";
 
         compagnieEtudiant.textContent =
-            etudiant.compagnies.nom;
-
-    } else {
-
-        compagnieEtudiant.textContent =
-            "Non renseignée";
+            "—";
 
     }
-
-
-    // --------------------------------------
-    // CALCUL DES SOLDES
-    // --------------------------------------
-
-    const detteJus =
-        Number(
-            etudiant.dette_jus
-        ) || 0;
-
-
-    const detteManger =
-        Number(
-            etudiant.dette_manger
-        ) || 0;
-
-
-    const total =
-        detteJus +
-        detteManger;
-
-
-    // --------------------------------------
-    // AFFICHAGE SOLDES
-    // --------------------------------------
-
-    soldeJus.textContent =
-        afficherSolde(
-            detteJus
-        );
-
-
-    soldeManger.textContent =
-        afficherSolde(
-            detteManger
-        );
-
-
-    soldeTotal.textContent =
-        afficherSolde(
-            total
-        );
-
-
-    // --------------------------------------
-    // MESSAGE GENERAL
-    // --------------------------------------
-
-    if (total < 0) {
-
-        messageCredit.textContent =
-            `Vous avez un crédit disponible de ${Math.abs(total)} FCFA.`;
-
-    }
-
-
-    else if (total > 0) {
-
-        messageCredit.textContent =
-            `Il vous reste ${total} FCFA à régler au total.`;
-
-    }
-
-
-    else {
-
-        messageCredit.textContent =
-            "Votre compte est actuellement équilibré.";
-
-    }
-
-
-    // --------------------------------------
-    // CHARGER HISTORIQUE
-    // --------------------------------------
-
-    await chargerHistorique();
 
 }
 
@@ -454,374 +476,388 @@ async function chargerHistorique() {
         "Chargement de l'historique...";
 
 
-    // --------------------------------------
-    // OPERATIONS / ACHATS / DETTES
-    // --------------------------------------
+    try {
 
-    const {
-        data: operations,
-        error: erreurOperations
-    } = await supabaseClient
+        // --------------------------------------
+        // OPERATIONS / ACHATS / DETTES
+        // --------------------------------------
 
-        .from("operations")
+        const {
+            data: operations,
+            error: erreurOperations
+        } = await supabaseClient
 
-        .select(`
-            id,
-            created_at,
-            type_operation,
-            categorie,
-            quantite,
-            montant,
-            note,
-            produits (
-                nom
+            .from("operations")
+
+            .select(`
+                id,
+                created_at,
+                type_operation,
+                categorie,
+                quantite,
+                montant,
+                note,
+                produits (
+                    nom
+                )
+            `)
+
+            .eq(
+                "etudiant_id",
+                etudiantConnecte.id
             )
-        `)
 
-        .eq(
-            "etudiant_id",
-            etudiantConnecte.id
-        )
-
-        .order(
-            "created_at",
-            {
-                ascending: false
-            }
-        );
-
-
-    // --------------------------------------
-    // PAIEMENTS
-    // --------------------------------------
-
-    const {
-        data: paiements,
-        error: erreurPaiements
-    } = await supabaseClient
-
-        .from("paiements")
-
-        .select(`
-            id,
-            created_at,
-            categorie,
-            montant,
-            moyen_paiement
-        `)
-
-        .eq(
-            "etudiant_id",
-            etudiantConnecte.id
-        )
-
-        .order(
-            "created_at",
-            {
-                ascending: false
-            }
-        );
-
-
-    if (
-        erreurOperations ||
-        erreurPaiements
-    ) {
-
-        console.error(
-            erreurOperations
-        );
-
-
-        console.error(
-            erreurPaiements
-        );
-
-
-        historiqueEtudiant.innerHTML =
-            "<p>Impossible de charger l'historique.</p>";
-
-        return;
-
-    }
-
-
-    // --------------------------------------
-    // REGROUPER LES ELEMENTS
-    // --------------------------------------
-
-    const historique =
-        [];
-
-
-    // OPERATIONS
-
-    (operations || []).forEach(
-        function (operation) {
-
-            historique.push({
-
-                type:
-                    "operation",
-
-                date:
-                    operation.created_at,
-
-                categorie:
-                    operation.categorie,
-
-                montant:
-                    Number(
-                        operation.montant
-                    ) || 0,
-
-                quantite:
-                    operation.quantite,
-
-                note:
-                    operation.note,
-
-                produit:
-                    operation.produits
-                        ? operation.produits.nom
-                        : null
-
-            });
-
-        }
-    );
-
-
-    // PAIEMENTS
-
-    (paiements || []).forEach(
-        function (paiement) {
-
-            historique.push({
-
-                type:
-                    "paiement",
-
-                date:
-                    paiement.created_at,
-
-                categorie:
-                    paiement.categorie,
-
-                montant:
-                    Number(
-                        paiement.montant
-                    ) || 0,
-
-                moyen:
-                    paiement.moyen_paiement
-
-            });
-
-        }
-    );
-
-
-    // --------------------------------------
-    // TRIER PAR DATE
-    // --------------------------------------
-
-    historique.sort(
-        function (a, b) {
-
-            return (
-                new Date(b.date) -
-                new Date(a.date)
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
             );
 
+
+        // --------------------------------------
+        // PAIEMENTS
+        // --------------------------------------
+
+        const {
+            data: paiements,
+            error: erreurPaiements
+        } = await supabaseClient
+
+            .from("paiements")
+
+            .select(`
+                id,
+                created_at,
+                categorie,
+                montant,
+                moyen_paiement
+            `)
+
+            .eq(
+                "etudiant_id",
+                etudiantConnecte.id
+            )
+
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+        if (
+            erreurOperations ||
+            erreurPaiements
+        ) {
+
+            console.error(
+                erreurOperations
+            );
+
+
+            console.error(
+                erreurPaiements
+            );
+
+
+            historiqueEtudiant.innerHTML =
+                "<p>Impossible de charger l'historique.</p>";
+
+            return;
+
         }
-    );
 
 
-    // --------------------------------------
-    // AUCUN HISTORIQUE
-    // --------------------------------------
+        // --------------------------------------
+        // REGROUPER LES ELEMENTS
+        // --------------------------------------
 
-    if (
-        historique.length === 0
-    ) {
-
-        historiqueEtudiant.innerHTML =
-            "<p>Aucune opération enregistrée pour le moment.</p>";
-
-        return;
-
-    }
+        const historique =
+            [];
 
 
-    // --------------------------------------
-    // AFFICHER HISTORIQUE
-    // --------------------------------------
+        // OPERATIONS
 
-    historiqueEtudiant.innerHTML =
-        "";
+        (operations || []).forEach(
+            function (operation) {
 
+                historique.push({
 
-    historique.forEach(
-        function (element) {
+                    type:
+                        "operation",
 
-            const carte =
-                document.createElement(
-                    "div"
-                );
+                    date:
+                        operation.created_at,
 
+                    categorie:
+                        operation.categorie,
 
-            carte.className =
-                "carte-operation";
+                    montant:
+                        Number(
+                            operation.montant
+                        ) || 0,
 
+                    quantite:
+                        operation.quantite,
 
-            const date =
-                new Date(
-                    element.date
-                ).toLocaleString(
-                    "fr-FR"
-                );
+                    note:
+                        operation.note,
 
+                    produit:
+                        operation.produits
+                            ? operation.produits.nom
+                            : null
 
-            // ==================================
-            // PAIEMENT
-            // ==================================
-
-            if (
-                element.type ===
-                "paiement"
-            ) {
-
-                carte.innerHTML = `
-
-                    <h4>
-                        PAIEMENT — ${element.categorie.toUpperCase()}
-                    </h4>
-
-                    <p>
-                        <strong>Montant payé :</strong>
-                        ${element.montant} FCFA
-                    </p>
-
-                    <p>
-                        <strong>Moyen :</strong>
-                        ${element.moyen}
-                    </p>
-
-                    <p>
-                        <strong>Date :</strong>
-                        ${date}
-                    </p>
-
-                `;
+                });
 
             }
+        );
 
 
-            // ==================================
-            // ACHAT / DETTE
-            // ==================================
+        // PAIEMENTS
 
-            else {
+        (paiements || []).forEach(
+            function (paiement) {
 
-                let contenu =
-                    `
-                    <h4>
-                        ${element.categorie.toUpperCase()}
-                    </h4>
-                `;
+                historique.push({
+
+                    type:
+                        "paiement",
+
+                    date:
+                        paiement.created_at,
+
+                    categorie:
+                        paiement.categorie,
+
+                    montant:
+                        Number(
+                            paiement.montant
+                        ) || 0,
+
+                    moyen:
+                        paiement.moyen_paiement
+
+                });
+
+            }
+        );
 
 
-                if (element.produit) {
+        // --------------------------------------
+        // TRIER PAR DATE
+        // --------------------------------------
 
-                    contenu += `
+        historique.sort(
+            function (a, b) {
+
+                return (
+                    new Date(b.date) -
+                    new Date(a.date)
+                );
+
+            }
+        );
+
+
+        // --------------------------------------
+        // AUCUN HISTORIQUE
+        // --------------------------------------
+
+        if (
+            historique.length === 0
+        ) {
+
+            historiqueEtudiant.innerHTML =
+                "<p>Aucune opération enregistrée pour le moment.</p>";
+
+            return;
+
+        }
+
+
+        // --------------------------------------
+        // AFFICHER HISTORIQUE
+        // --------------------------------------
+
+        historiqueEtudiant.innerHTML =
+            "";
+
+
+        historique.forEach(
+            function (element) {
+
+                const carte =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                carte.className =
+                    "carte-operation";
+
+
+                const date =
+                    new Date(
+                        element.date
+                    ).toLocaleString(
+                        "fr-FR"
+                    );
+
+
+                // ==================================
+                // PAIEMENT
+                // ==================================
+
+                if (
+                    element.type ===
+                    "paiement"
+                ) {
+
+                    carte.innerHTML = `
+
+                        <h4>
+                            PAIEMENT — ${element.categorie.toUpperCase()}
+                        </h4>
 
                         <p>
-                            <strong>Produit :</strong>
-                            ${element.produit}
+                            <strong>Montant payé :</strong>
+                            ${element.montant} FCFA
+                        </p>
+
+                        <p>
+                            <strong>Moyen :</strong>
+                            ${element.moyen}
+                        </p>
+
+                        <p>
+                            <strong>Date :</strong>
+                            ${date}
                         </p>
 
                     `;
 
+                }
 
-                    if (
-                        element.quantite
-                    ) {
+
+                // ==================================
+                // ACHAT / DETTE
+                // ==================================
+
+                else {
+
+                    let contenu =
+                        `
+                        <h4>
+                            ${element.categorie.toUpperCase()}
+                        </h4>
+                    `;
+
+
+                    if (element.produit) {
 
                         contenu += `
 
                             <p>
-                                <strong>Quantité :</strong>
-                                ${element.quantite}
+                                <strong>Produit :</strong>
+                                ${element.produit}
+                            </p>
+
+                        `;
+
+
+                        if (
+                            element.quantite
+                        ) {
+
+                            contenu += `
+
+                                <p>
+                                    <strong>Quantité :</strong>
+                                    ${element.quantite}
+                                </p>
+
+                            `;
+
+                        }
+
+                    }
+
+
+                    else {
+
+                        contenu += `
+
+                            <p>
+                                <strong>Dette ajoutée :</strong>
+                                ${element.montant} FCFA
                             </p>
 
                         `;
 
                     }
 
-                }
-
-
-                else {
 
                     contenu += `
 
                         <p>
-                            <strong>Dette ajoutée :</strong>
+                            <strong>Montant :</strong>
                             ${element.montant} FCFA
                         </p>
 
                     `;
 
-                }
 
+                    if (element.note) {
 
-                contenu += `
+                        contenu += `
 
-                    <p>
-                        <strong>Montant :</strong>
-                        ${element.montant} FCFA
-                    </p>
+                            <p>
+                                <strong>Note :</strong>
+                                ${element.note}
+                            </p>
 
-                `;
+                        `;
 
+                    }
 
-                if (element.note) {
 
                     contenu += `
 
                         <p>
-                            <strong>Note :</strong>
-                            ${element.note}
+                            <strong>Date :</strong>
+                            ${date}
                         </p>
 
                     `;
 
+
+                    carte.innerHTML =
+                        contenu;
+
                 }
 
 
-                contenu += `
-
-                    <p>
-                        <strong>Date :</strong>
-                        ${date}
-                    </p>
-
-                `;
-
-
-                carte.innerHTML =
-                    contenu;
+                historiqueEtudiant.appendChild(
+                    carte
+                );
 
             }
+        );
 
+    } catch (erreurInattendue) {
 
-            historiqueEtudiant.appendChild(
-                carte
-            );
+        console.error(
+            "Erreur inattendue lors du chargement de l'historique :",
+            erreurInattendue
+        );
 
-        }
-    );
+        historiqueEtudiant.innerHTML =
+            "<p>Une erreur inattendue est survenue lors du chargement de l'historique.</p>";
+
+    }
 
 }
 
@@ -842,13 +878,30 @@ boutonDeconnexion.addEventListener(
             "Déconnexion...";
 
 
-        await supabaseClient
-            .auth
-            .signOut();
+        try {
+
+            await supabaseClient
+                .auth
+                .signOut();
 
 
-        window.location.href =
-            "./index.html";
+            window.location.href =
+                "./index.html";
+
+        } catch (erreurInattendue) {
+
+            console.error(
+                "Erreur inattendue de déconnexion :",
+                erreurInattendue
+            );
+
+            boutonDeconnexion.disabled =
+                false;
+
+            boutonDeconnexion.textContent =
+                "Se déconnecter";
+
+        }
 
     }
 );

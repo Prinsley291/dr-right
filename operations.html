@@ -349,78 +349,94 @@ let panier = [];
 
 async function verifierAdministrateur() {
 
-    const {
-        data: sessionData,
-        error: sessionError
-    } = await supabaseClient
-        .auth
-        .getSession();
+    try {
 
-
-    if (
-        sessionError ||
-        !sessionData.session
-    ) {
-
-        window.location.href =
-            "./connexion-administrateur.html";
-
-        return false;
-    }
-
-
-    const utilisateur =
-        sessionData.session.user;
-
-
-    const {
-        data: administrateur,
-        error: erreurAdministrateur
-    } = await supabaseClient
-
-        .from("administrateurs")
-
-        .select("*")
-
-        .eq(
-            "auth_user_id",
-            utilisateur.id
-        )
-
-        .eq(
-            "statut",
-            "actif"
-        )
-
-        .maybeSingle();
-
-
-    if (
-        erreurAdministrateur ||
-        !administrateur
-    ) {
-
-        await supabaseClient
+        const {
+            data: sessionData,
+            error: sessionError
+        } = await supabaseClient
             .auth
-            .signOut();
+            .getSession();
 
 
-        window.location.href =
-            "./connexion-administrateur.html";
+        if (
+            sessionError ||
+            !sessionData.session
+        ) {
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return false;
+        }
+
+
+        const utilisateur =
+            sessionData.session.user;
+
+
+        const {
+            data: administrateur,
+            error: erreurAdministrateur
+        } = await supabaseClient
+
+            .from("administrateurs")
+
+            .select("*")
+
+            .eq(
+                "auth_user_id",
+                utilisateur.id
+            )
+
+            .eq(
+                "statut",
+                "actif"
+            )
+
+            .maybeSingle();
+
+
+        if (
+            erreurAdministrateur ||
+            !administrateur
+        ) {
+
+            await supabaseClient
+                .auth
+                .signOut();
+
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return false;
+        }
+
+
+        administrateurConnecte =
+            administrateur;
+
+
+        messagePage.textContent =
+            `Connecté : ${administrateur.prenom} ${administrateur.nom}`;
+
+
+        return true;
+
+    } catch (erreurInattendue) {
+
+        console.error(
+            "Erreur inattendue lors de la vérification :",
+            erreurInattendue
+        );
+
+        messagePage.textContent =
+            "Une erreur inattendue est survenue. Veuillez réessayer ou vous reconnecter.";
 
         return false;
+
     }
-
-
-    administrateurConnecte =
-        administrateur;
-
-
-    messagePage.textContent =
-        `Connecté : ${administrateur.prenom} ${administrateur.nom}`;
-
-
-    return true;
 
 }
 
@@ -466,67 +482,78 @@ boutonAfficherFormulaire.addEventListener(
 
 async function chargerEtudiants() {
 
-    const {
-        data,
-        error
-    } = await supabaseClient
+    try {
 
-        .from("etudiants")
+        const {
+            data,
+            error
+        } = await supabaseClient
 
-        .select(
-            "id, nom, prenom"
-        )
+            .from("etudiants")
 
-        .eq(
-            "statut",
-            "actif"
-        )
+            .select(
+                "id, nom, prenom"
+            )
 
-        .order(
-            "nom",
-            {
-                ascending: true
+            .eq(
+                "statut",
+                "actif"
+            )
+
+            .order(
+                "nom",
+                {
+                    ascending: true
+                }
+            );
+
+
+        if (error) {
+
+            console.error(error);
+
+            return;
+        }
+
+
+        tousLesEtudiants =
+            data || [];
+
+
+        etudiantOperation.innerHTML =
+            '<option value="">-- Choisir un étudiant --</option>';
+
+
+        tousLesEtudiants.forEach(
+            function (etudiant) {
+
+                const option =
+                    document.createElement("option");
+
+
+                option.value =
+                    etudiant.id;
+
+
+                option.textContent =
+                    `${etudiant.prenom} ${etudiant.nom}`;
+
+
+                etudiantOperation.appendChild(
+                    option
+                );
+
             }
         );
 
+    } catch (erreurInattendue) {
 
-    if (error) {
+        console.error(
+            "Erreur inattendue lors du chargement des étudiants :",
+            erreurInattendue
+        );
 
-        console.error(error);
-
-        return;
     }
-
-
-    tousLesEtudiants =
-        data || [];
-
-
-    etudiantOperation.innerHTML =
-        '<option value="">-- Choisir un étudiant --</option>';
-
-
-    tousLesEtudiants.forEach(
-        function (etudiant) {
-
-            const option =
-                document.createElement("option");
-
-
-            option.value =
-                etudiant.id;
-
-
-            option.textContent =
-                `${etudiant.prenom} ${etudiant.nom}`;
-
-
-            etudiantOperation.appendChild(
-                option
-            );
-
-        }
-    );
 
 }
 
@@ -537,43 +564,54 @@ async function chargerEtudiants() {
 
 async function chargerProduits() {
 
-    const {
-        data,
-        error
-    } = await supabaseClient
+    try {
 
-        .from("produits")
+        const {
+            data,
+            error
+        } = await supabaseClient
 
-        .select(
-            "id, nom, categorie, prix"
-        )
+            .from("produits")
 
-        .eq(
-            "actif",
-            true
-        )
+            .select(
+                "id, nom, categorie, prix"
+            )
 
-        .order(
-            "nom",
-            {
-                ascending: true
-            }
+            .eq(
+                "actif",
+                true
+            )
+
+            .order(
+                "nom",
+                {
+                    ascending: true
+                }
+            );
+
+
+        if (error) {
+
+            console.error(error);
+
+            return;
+        }
+
+
+        tousLesProduits =
+            data || [];
+
+
+        actualiserListeProduits();
+
+    } catch (erreurInattendue) {
+
+        console.error(
+            "Erreur inattendue lors du chargement des produits :",
+            erreurInattendue
         );
 
-
-    if (error) {
-
-        console.error(error);
-
-        return;
     }
-
-
-    tousLesProduits =
-        data || [];
-
-
-    actualiserListeProduits();
 
 }
 
@@ -1061,52 +1099,81 @@ formulaireOperation.addEventListener(
             "Enregistrement en cours...";
 
 
-        const operationsPanier = panier.map(function (operation) {
-            return {
-                type_operation: operation.type_operation,
-                categorie: operation.categorie,
-                produit_id: operation.produit_id,
-                quantite: operation.quantite,
-                montant: operation.montant,
-                moyen_paiement: null,
-                note: operation.note
-            };
-        });
+        const boutonEnregistrerTout =
+            document.getElementById(
+                "bouton-enregistrer-tout"
+            );
 
-        const { error: erreurEnregistrement } = await supabaseClient
-            .rpc("enregistrer_operations_panier_atomique", {
-                p_etudiant_id: etudiantId,
-                p_operations: operationsPanier
+
+        boutonEnregistrerTout.disabled =
+            true;
+
+
+        try {
+
+            const operationsPanier = panier.map(function (operation) {
+                return {
+                    type_operation: operation.type_operation,
+                    categorie: operation.categorie,
+                    produit_id: operation.produit_id,
+                    quantite: operation.quantite,
+                    montant: operation.montant,
+                    moyen_paiement: null,
+                    note: operation.note
+                };
             });
 
-        if (erreurEnregistrement) {
-            console.error(erreurEnregistrement);
+            const { error: erreurEnregistrement } = await supabaseClient
+                .rpc("enregistrer_operations_panier_atomique", {
+                    p_etudiant_id: etudiantId,
+                    p_operations: operationsPanier
+                });
+
+            if (erreurEnregistrement) {
+                console.error(erreurEnregistrement);
+                messageOperation.textContent =
+                    erreurEnregistrement.message ||
+                    "Erreur lors de l'enregistrement des opérations.";
+                return;
+            }
+
+            // SUCCES
+
             messageOperation.textContent =
-                erreurEnregistrement.message ||
-                "Erreur lors de l'enregistrement des opérations.";
-            return;
+                "Toutes les opérations ont été enregistrées avec succès.";
+
+
+            formulaireOperation.reset();
+
+
+            panier = [];
+
+
+            afficherPanier();
+
+
+            infoProduit.textContent =
+                "Choisissez d'abord une catégorie et un produit.";
+
+
+            await chargerOperations();
+
+        } catch (erreurInattendue) {
+
+            console.error(
+                "Erreur inattendue :",
+                erreurInattendue
+            );
+
+            messageOperation.textContent =
+                "Une erreur inattendue est survenue.";
+
+        } finally {
+
+            boutonEnregistrerTout.disabled =
+                false;
+
         }
-
-        // SUCCES
-
-        messageOperation.textContent =
-            "Toutes les opérations ont été enregistrées avec succès.";
-
-
-        formulaireOperation.reset();
-
-
-        panier = [];
-
-
-        afficherPanier();
-
-
-        infoProduit.textContent =
-            "Choisissez d'abord une catégorie et un produit.";
-
-
-        await chargerOperations();
 
     }
 );
@@ -1121,64 +1188,77 @@ async function chargerOperations() {
     listeOperations.innerHTML =
         "Chargement de l'historique...";
 
+    try {
 
-    const {
-        data,
-        error
-    } = await supabaseClient
+        const {
+            data,
+            error
+        } = await supabaseClient
 
-        .from("operations")
+            .from("operations")
 
-        .select(`
-            id,
-            created_at,
-            type_operation,
-            categorie,
-            quantite,
-            montant,
-            note,
+            .select(`
+                id,
+                created_at,
+                type_operation,
+                categorie,
+                quantite,
+                montant,
+                note,
 
-            etudiants (
-                nom,
-                prenom
-            ),
+                etudiants (
+                    nom,
+                    prenom
+                ),
 
-            produits (
-                nom
-            ),
+                produits (
+                    nom
+                ),
 
-            administrateurs (
-                nom,
-                prenom
-            )
-        `)
+                administrateurs (
+                    nom,
+                    prenom
+                )
+            `)
 
-        .order(
-            "created_at",
-            {
-                ascending: false
-            }
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+        if (error) {
+
+            console.error(error);
+
+            listeOperations.innerHTML =
+                "Impossible de charger l'historique.";
+
+            return;
+        }
+
+
+        toutesLesOperations =
+            data || [];
+
+
+        afficherOperations(
+            toutesLesOperations
         );
 
+    } catch (erreurInattendue) {
 
-    if (error) {
-
-        console.error(error);
+        console.error(
+            "Erreur inattendue lors du chargement de l'historique :",
+            erreurInattendue
+        );
 
         listeOperations.innerHTML =
-            "Impossible de charger l'historique.";
+            "Une erreur inattendue est survenue.";
 
-        return;
     }
-
-
-    toutesLesOperations =
-        data || [];
-
-
-    afficherOperations(
-        toutesLesOperations
-    );
 
 }
 

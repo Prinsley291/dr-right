@@ -911,79 +911,94 @@ async function verifierAdministrateur() {
     messagePage.textContent =
         "Vérification de votre accès...";
 
+    try {
 
-    const {
-        data: sessionData,
-        error: sessionError
-    } = await supabaseClient
-        .auth
-        .getSession();
-
-
-    if (
-        sessionError ||
-        !sessionData.session
-    ) {
-
-        window.location.href =
-            "./connexion-administrateur.html";
-
-        return false;
-
-    }
-
-
-    const session =
-        sessionData.session;
-
-
-    const {
-        data: administrateur,
-        error
-    } = await supabaseClient
-
-        .from("administrateurs")
-
-        .select(
-            "id, prenom, nom"
-        )
-
-        .eq(
-            "auth_user_id",
-            session.user.id
-        )
-
-        .eq(
-            "statut",
-            "actif"
-        )
-
-        .maybeSingle();
-
-
-    if (
-        error ||
-        !administrateur
-    ) {
-
-        await supabaseClient
+        const {
+            data: sessionData,
+            error: sessionError
+        } = await supabaseClient
             .auth
-            .signOut();
+            .getSession();
 
 
-        window.location.href =
-            "./connexion-administrateur.html";
+        if (
+            sessionError ||
+            !sessionData.session
+        ) {
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return false;
+
+        }
+
+
+        const session =
+            sessionData.session;
+
+
+        const {
+            data: administrateur,
+            error
+        } = await supabaseClient
+
+            .from("administrateurs")
+
+            .select(
+                "id, prenom, nom"
+            )
+
+            .eq(
+                "auth_user_id",
+                session.user.id
+            )
+
+            .eq(
+                "statut",
+                "actif"
+            )
+
+            .maybeSingle();
+
+
+        if (
+            error ||
+            !administrateur
+        ) {
+
+            await supabaseClient
+                .auth
+                .signOut();
+
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return false;
+
+        }
+
+
+        messagePage.textContent =
+            `Connecté : ${administrateur.prenom || ""} ${administrateur.nom || ""}`;
+
+
+        return true;
+
+    } catch (erreurInattendue) {
+
+        console.error(
+            "Erreur inattendue lors de la vérification :",
+            erreurInattendue
+        );
+
+        messagePage.textContent =
+            "Une erreur inattendue est survenue. Veuillez réessayer ou vous reconnecter.";
 
         return false;
 
     }
-
-
-    messagePage.textContent =
-        `Connecté : ${administrateur.prenom || ""} ${administrateur.nom || ""}`;
-
-
-    return true;
 
 }
 
@@ -997,47 +1012,60 @@ async function chargerCompagnies() {
     listeCompagnies.innerHTML =
         "Chargement des compagnies...";
 
+    try {
 
-    const {
-        data: compagnies,
-        error
-    } = await supabaseClient
+        const {
+            data: compagnies,
+            error
+        } = await supabaseClient
 
-        .from("compagnies")
+            .from("compagnies")
 
-        .select(`
-            *,
-            etudiants (
-                id
-            )
-        `);
+            .select(`
+                *,
+                etudiants (
+                    id
+                )
+            `);
 
 
-    if (error) {
+        if (error) {
+
+            console.error(
+                "Erreur chargement compagnies :",
+                error
+            );
+
+
+            listeCompagnies.innerHTML =
+                "Impossible de charger les compagnies.";
+
+            return;
+
+        }
+
+
+        toutesLesCompagnies =
+            trierCompagnies(
+                compagnies || []
+            );
+
+
+        afficherCompagnies(
+            toutesLesCompagnies
+        );
+
+    } catch (erreurInattendue) {
 
         console.error(
-            "Erreur chargement compagnies :",
-            error
+            "Erreur inattendue lors du chargement des compagnies :",
+            erreurInattendue
         );
-
 
         listeCompagnies.innerHTML =
-            "Impossible de charger les compagnies.";
-
-        return;
+            "Une erreur inattendue est survenue.";
 
     }
-
-
-    toutesLesCompagnies =
-        trierCompagnies(
-            compagnies || []
-        );
-
-
-    afficherCompagnies(
-        toutesLesCompagnies
-    );
 
 }
 
@@ -1245,242 +1273,255 @@ async function chargerEtudiantsCompagnie() {
     nombreEtudiantsCompagnie.textContent =
         "";
 
+    try {
 
-    const {
-        data,
-        error
-    } = await supabaseClient
-
-        .from("etudiants")
-
-        .select(`
-            id,
-            nom,
-            prenom,
-            dette_jus,
-            dette_manger,
-            statut
-        `)
-
-        .eq(
-            "compagnie_id",
-            compagnieSelectionnee.id
-        )
-
-        .order(
-            "nom",
-            {
-                ascending: true
-            }
-        )
-
-        .order(
-            "prenom",
-            {
-                ascending: true
-            }
-        );
-
-
-    if (error) {
-
-        console.error(
-            "Erreur chargement étudiants :",
+        const {
+            data,
             error
-        );
-
-
-        listeEtudiantsCompagnie.innerHTML =
-            "Impossible de charger les étudiants.";
-
-        return;
-
-    }
-
-
-    const nombre =
-        data
-            ? data.length
-            : 0;
-
-
-    nombreEtudiantsCompagnie.textContent =
-        `${nombre} étudiant(s) dans cette compagnie.`;
-
-
-    if (
-        !data ||
-        data.length === 0
-    ) {
-
-        listeEtudiantsCompagnie.innerHTML =
-            "<p>Aucun étudiant dans cette compagnie.</p>";
-
-        return;
-
-    }
-
-
-    // ======================================
-    // CREER LE TABLEAU
-    // ======================================
-
-    const tableau =
-        document.createElement(
-            "table"
-        );
-
-
-    tableau.style.width =
-        "100%";
-
-
-    tableau.style.borderCollapse =
-        "collapse";
-
-
-    tableau.innerHTML = `
-
-        <thead>
-
-            <tr>
-
-                <th>
-                    N°
-                </th>
-
-                <th>
-                    Nom
-                </th>
-
-                <th>
-                    Prénom
-                </th>
-
-                <th>
-                    Dette jus
-                </th>
-
-                <th>
-                    Dette manger
-                </th>
-
-                <th>
-                    Dette totale
-                </th>
-
-                <th>
-                    Statut
-                </th>
-
-            </tr>
-
-        </thead>
-
-
-        <tbody></tbody>
-
-    `;
-
-
-    const corpsTableau =
-        tableau.querySelector(
-            "tbody"
-        );
-
-
-    data.forEach(
-        function (
-            etudiant,
-            index
-        ) {
-
-
-            const detteJus =
-                Number(
-                    etudiant.dette_jus || 0
-                );
-
-
-            const detteManger =
-                Number(
-                    etudiant.dette_manger || 0
-                );
-
-
-            const detteTotale =
-                detteJus +
-                detteManger;
-
-
-            const ligne =
-                document.createElement(
-                    "tr"
-                );
-
-
-            ligne.innerHTML = `
-
-                <td>
-                    ${index + 1}
-                </td>
-
-
-                <td>
-                    ${etudiant.nom || ""}
-                </td>
-
-
-                <td>
-                    ${etudiant.prenom || ""}
-                </td>
-
-
-                <td>
-                    ${formaterMontant(
-                        detteJus
-                    )}
-                </td>
-
-
-                <td>
-                    ${formaterMontant(
-                        detteManger
-                    )}
-                </td>
-
-
-                <td>
-                    <strong>
-                        ${formaterMontant(
-                            detteTotale
-                        )}
-                    </strong>
-                </td>
-
-
-                <td>
-                    ${etudiant.statut || "Non renseigné"}
-                </td>
-
-            `;
-
-
-            corpsTableau.appendChild(
-                ligne
+        } = await supabaseClient
+
+            .from("etudiants")
+
+            .select(`
+                id,
+                nom,
+                prenom,
+                dette_jus,
+                dette_manger,
+                statut
+            `)
+
+            .eq(
+                "compagnie_id",
+                compagnieSelectionnee.id
+            )
+
+            .order(
+                "nom",
+                {
+                    ascending: true
+                }
+            )
+
+            .order(
+                "prenom",
+                {
+                    ascending: true
+                }
             );
 
+
+        if (error) {
+
+            console.error(
+                "Erreur chargement étudiants :",
+                error
+            );
+
+
+            listeEtudiantsCompagnie.innerHTML =
+                "Impossible de charger les étudiants.";
+
+            return;
+
         }
-    );
 
 
-    listeEtudiantsCompagnie.innerHTML =
-        "";
+        const nombre =
+            data
+                ? data.length
+                : 0;
 
 
-    listeEtudiantsCompagnie.appendChild(
-        tableau
-    );
+        nombreEtudiantsCompagnie.textContent =
+            `${nombre} étudiant(s) dans cette compagnie.`;
+
+
+        if (
+            !data ||
+            data.length === 0
+        ) {
+
+            listeEtudiantsCompagnie.innerHTML =
+                "<p>Aucun étudiant dans cette compagnie.</p>";
+
+            return;
+
+        }
+
+
+        // ======================================
+        // CREER LE TABLEAU
+        // ======================================
+
+        const tableau =
+            document.createElement(
+                "table"
+            );
+
+
+        tableau.style.width =
+            "100%";
+
+
+        tableau.style.borderCollapse =
+            "collapse";
+
+
+        tableau.innerHTML = `
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        N°
+                    </th>
+
+                    <th>
+                        Nom
+                    </th>
+
+                    <th>
+                        Prénom
+                    </th>
+
+                    <th>
+                        Dette jus
+                    </th>
+
+                    <th>
+                        Dette manger
+                    </th>
+
+                    <th>
+                        Dette totale
+                    </th>
+
+                    <th>
+                        Statut
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody></tbody>
+
+        `;
+
+
+        const corpsTableau =
+            tableau.querySelector(
+                "tbody"
+            );
+
+
+        data.forEach(
+            function (
+                etudiant,
+                index
+            ) {
+
+
+                const detteJus =
+                    Number(
+                        etudiant.dette_jus || 0
+                    );
+
+
+                const detteManger =
+                    Number(
+                        etudiant.dette_manger || 0
+                    );
+
+
+                const detteTotale =
+                    detteJus +
+                    detteManger;
+
+
+                const ligne =
+                    document.createElement(
+                        "tr"
+                    );
+
+
+                ligne.innerHTML = `
+
+                    <td>
+                        ${index + 1}
+                    </td>
+
+
+                    <td>
+                        ${etudiant.nom || ""}
+                    </td>
+
+
+                    <td>
+                        ${etudiant.prenom || ""}
+                    </td>
+
+
+                    <td>
+                        ${formaterMontant(
+                            detteJus
+                        )}
+                    </td>
+
+
+                    <td>
+                        ${formaterMontant(
+                            detteManger
+                        )}
+                    </td>
+
+
+                    <td>
+                        <strong>
+                            ${formaterMontant(
+                                detteTotale
+                            )}
+                        </strong>
+                    </td>
+
+
+                    <td>
+                        ${etudiant.statut || "Non renseigné"}
+                    </td>
+
+                `;
+
+
+                corpsTableau.appendChild(
+                    ligne
+                );
+
+            }
+        );
+
+
+        listeEtudiantsCompagnie.innerHTML =
+            "";
+
+
+        listeEtudiantsCompagnie.appendChild(
+            tableau
+        );
+
+    } catch (erreurInattendue) {
+
+        console.error(
+            "Erreur inattendue lors du chargement des étudiants :",
+            erreurInattendue
+        );
+
+        listeEtudiantsCompagnie.innerHTML =
+            "Une erreur inattendue est survenue.";
+
+    }
 
 }
 
@@ -1959,70 +2000,101 @@ formulaireAjoutCompagnie.addEventListener(
             "Ajout de la compagnie...";
 
 
-        const {
-            error
-        } = await supabaseClient
-
-            .from("compagnies")
-
-            .insert({
-
-                nom:
-                    nom
-
-            });
+        const boutonEnregistrerCompagnie =
+            formulaireAjoutCompagnie
+                .querySelector(
+                    'button[type="submit"]'
+                );
 
 
-        if (error) {
+        boutonEnregistrerCompagnie.disabled =
+            true;
 
-            console.error(
-                "Erreur ajout compagnie :",
+
+        try {
+
+            const {
                 error
-            );
+            } = await supabaseClient
+
+                .from("compagnies")
+
+                .insert({
+
+                    nom:
+                        nom
+
+                });
 
 
-            messageAjoutCompagnie
-                .textContent =
-                "Impossible d'ajouter la compagnie.";
+            if (error) {
 
-            return;
-
-        }
-
-
-        messageAjoutCompagnie
-            .textContent =
-            "Compagnie ajoutée avec succès.";
-
-
-        formulaireAjoutCompagnie
-            .reset();
-
-
-        await chargerCompagnies();
-
-
-        setTimeout(
-            function () {
-
-                zoneAjoutCompagnie
-                    .style
-                    .display =
-                    "none";
-
-
-                boutonAjouterCompagnie
-                    .textContent =
-                    "Ajouter une compagnie";
+                console.error(
+                    "Erreur ajout compagnie :",
+                    error
+                );
 
 
                 messageAjoutCompagnie
                     .textContent =
-                    "";
+                    "Impossible d'ajouter la compagnie.";
 
-            },
-            800
-        );
+                return;
+
+            }
+
+
+            messageAjoutCompagnie
+                .textContent =
+                "Compagnie ajoutée avec succès.";
+
+
+            formulaireAjoutCompagnie
+                .reset();
+
+
+            await chargerCompagnies();
+
+
+            setTimeout(
+                function () {
+
+                    zoneAjoutCompagnie
+                        .style
+                        .display =
+                        "none";
+
+
+                    boutonAjouterCompagnie
+                        .textContent =
+                        "Ajouter une compagnie";
+
+
+                    messageAjoutCompagnie
+                        .textContent =
+                        "";
+
+                },
+                800
+            );
+
+        } catch (erreurInattendue) {
+
+            console.error(
+                "Erreur inattendue :",
+                erreurInattendue
+            );
+
+            messageAjoutCompagnie
+                .textContent =
+                "Une erreur inattendue est survenue.";
+
+        } finally {
+
+            boutonEnregistrerCompagnie.disabled =
+                false;
+
+        }
 
     }
 );

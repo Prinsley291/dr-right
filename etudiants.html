@@ -661,80 +661,95 @@ async function verifierAdministrateur() {
     messagePage.textContent =
         "Vérification de votre accès...";
 
+    try {
 
-    const {
-        data: sessionData,
-        error: sessionError
-    } = await supabaseClient
-        .auth
-        .getSession();
-
-
-    if (sessionError) {
-
-        window.location.href =
-            "./connexion-administrateur.html";
-
-        return false;
-
-    }
-
-
-    const session =
-        sessionData.session;
-
-
-    if (!session) {
-
-        window.location.href =
-            "./connexion-administrateur.html";
-
-        return false;
-
-    }
-
-
-    const {
-        data: administrateur,
-        error: erreurAdministrateur
-    } = await supabaseClient
-
-        .from("administrateurs")
-
-        .select("id")
-
-        .eq(
-            "auth_user_id",
-            session.user.id
-        )
-
-        .eq(
-            "statut",
-            "actif"
-        )
-
-        .maybeSingle();
-
-
-    if (
-        erreurAdministrateur ||
-        !administrateur
-    ) {
-
-        await supabaseClient
+        const {
+            data: sessionData,
+            error: sessionError
+        } = await supabaseClient
             .auth
-            .signOut();
+            .getSession();
 
 
-        window.location.href =
-            "./connexion-administrateur.html";
+        if (sessionError) {
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return false;
+
+        }
+
+
+        const session =
+            sessionData.session;
+
+
+        if (!session) {
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return false;
+
+        }
+
+
+        const {
+            data: administrateur,
+            error: erreurAdministrateur
+        } = await supabaseClient
+
+            .from("administrateurs")
+
+            .select("id")
+
+            .eq(
+                "auth_user_id",
+                session.user.id
+            )
+
+            .eq(
+                "statut",
+                "actif"
+            )
+
+            .maybeSingle();
+
+
+        if (
+            erreurAdministrateur ||
+            !administrateur
+        ) {
+
+            await supabaseClient
+                .auth
+                .signOut();
+
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return false;
+
+        }
+
+
+        return true;
+
+    } catch (erreurInattendue) {
+
+        console.error(
+            "Erreur inattendue lors de la vérification :",
+            erreurInattendue
+        );
+
+        messagePage.textContent =
+            "Une erreur inattendue est survenue. Veuillez réessayer ou vous reconnecter.";
 
         return false;
 
     }
-
-
-    return true;
 
 }
 
@@ -748,72 +763,85 @@ async function chargerCompagnies() {
     selectCompagnie.innerHTML =
         '<option value="">Chargement...</option>';
 
+    try {
 
-    const {
-        data: compagnies,
-        error
-    } = await supabaseClient
-
-        .from("compagnies")
-
-        .select("*")
-
-        .order(
-            "nom",
-            {
-                ascending: true
-            }
-        );
-
-
-    if (error) {
-
-        console.error(
-            "Erreur chargement compagnies :",
+        const {
+            data: compagnies,
             error
-        );
+        } = await supabaseClient
+
+            .from("compagnies")
+
+            .select("*")
+
+            .order(
+                "nom",
+                {
+                    ascending: true
+                }
+            );
+
+
+        if (error) {
+
+            console.error(
+                "Erreur chargement compagnies :",
+                error
+            );
+
+
+            selectCompagnie.innerHTML =
+                '<option value="">Impossible de charger les compagnies</option>';
+
+
+            return;
+
+        }
+
+
+        toutesLesCompagnies =
+            compagnies || [];
 
 
         selectCompagnie.innerHTML =
-            '<option value="">Impossible de charger les compagnies</option>';
+            '<option value="">-- Choisir une compagnie --</option>';
 
 
-        return;
+        toutesLesCompagnies.forEach(
+            function (compagnie) {
 
-    }
-
-
-    toutesLesCompagnies =
-        compagnies || [];
-
-
-    selectCompagnie.innerHTML =
-        '<option value="">-- Choisir une compagnie --</option>';
+                const option =
+                    document.createElement(
+                        "option"
+                    );
 
 
-    toutesLesCompagnies.forEach(
-        function (compagnie) {
+                option.value =
+                    compagnie.id;
 
-            const option =
-                document.createElement(
-                    "option"
+
+                option.textContent =
+                    compagnie.nom;
+
+
+                selectCompagnie.appendChild(
+                    option
                 );
 
+            }
+        );
 
-            option.value =
-                compagnie.id;
+    } catch (erreurInattendue) {
 
+        console.error(
+            "Erreur inattendue lors du chargement des compagnies :",
+            erreurInattendue
+        );
 
-            option.textContent =
-                compagnie.nom;
+        selectCompagnie.innerHTML =
+            '<option value="">Erreur inattendue</option>';
 
-
-            selectCompagnie.appendChild(
-                option
-            );
-
-        }
-    );
+    }
 
 }
 
@@ -827,81 +855,97 @@ async function chargerEtudiants() {
     listeEtudiants.innerHTML =
         "Chargement des étudiants...";
 
+    try {
 
-    const {
-        data: etudiants,
-        error
-    } = await supabaseClient
+        const {
+            data: etudiants,
+            error
+        } = await supabaseClient
 
-        .from("etudiants")
+            .from("etudiants")
 
-        .select(`
-            *,
-            compagnies (
-                id,
-                nom
-            )
-        `)
+            .select(`
+                *,
+                compagnies (
+                    id,
+                    nom
+                )
+            `)
 
-        .order(
-            "nom",
-            {
-                ascending: true
-            }
+            .order(
+                "nom",
+                {
+                    ascending: true
+                }
+            );
+
+
+        if (error) {
+
+            console.error(
+                "Erreur chargement étudiants :",
+                error
+            );
+
+
+            messagePage.textContent =
+                "Impossible de charger les étudiants.";
+
+
+            listeEtudiants.innerHTML =
+                "Une erreur est survenue.";
+
+
+            return;
+
+        }
+
+
+        tousLesEtudiants =
+            etudiants || [];
+
+
+        if (
+            tousLesEtudiants.length === 0
+        ) {
+
+            zoneRechercheEtudiant.style.display =
+                "none";
+
+
+            messagePage.textContent =
+                "Aucun étudiant enregistré.";
+
+        } else {
+
+            zoneRechercheEtudiant.style.display =
+                "block";
+
+
+            messagePage.textContent =
+                `${tousLesEtudiants.length} étudiant(s) enregistré(s).`;
+
+        }
+
+
+        afficherEtudiants(
+            tousLesEtudiants
         );
 
-
-    if (error) {
+    } catch (erreurInattendue) {
 
         console.error(
-            "Erreur chargement étudiants :",
-            error
+            "Erreur inattendue lors du chargement des étudiants :",
+            erreurInattendue
         );
 
-
         messagePage.textContent =
-            "Impossible de charger les étudiants.";
-
+            "Une erreur inattendue est survenue.";
 
         listeEtudiants.innerHTML =
-            "Une erreur est survenue.";
-
-
-        return;
+            "Une erreur inattendue est survenue.";
 
     }
-
-
-    tousLesEtudiants =
-        etudiants || [];
-
-
-    if (
-        tousLesEtudiants.length === 0
-    ) {
-
-        zoneRechercheEtudiant.style.display =
-            "none";
-
-
-        messagePage.textContent =
-            "Aucun étudiant enregistré.";
-
-    } else {
-
-        zoneRechercheEtudiant.style.display =
-            "block";
-
-
-        messagePage.textContent =
-            `${tousLesEtudiants.length} étudiant(s) enregistré(s).`;
-
-    }
-
-
-    afficherEtudiants(
-        tousLesEtudiants
-    );
 
 }
 

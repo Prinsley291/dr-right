@@ -251,74 +251,90 @@ let etudiantSelectionne = null;
 
 async function verifierAdministrateur() {
 
-    const {
-        data: sessionData
-    } = await supabaseClient
-        .auth
-        .getSession();
+    try {
 
-
-    const session =
-        sessionData.session;
-
-
-    if (!session) {
-
-        window.location.href =
-            "./connexion-administrateur.html";
-
-        return false;
-    }
-
-
-    const {
-        data: administrateur,
-        error
-    } = await supabaseClient
-
-        .from("administrateurs")
-
-        .select("*")
-
-        .eq(
-            "auth_user_id",
-            session.user.id
-        )
-
-        .eq(
-            "statut",
-            "actif"
-        )
-
-        .maybeSingle();
-
-
-    if (
-        error ||
-        !administrateur
-    ) {
-
-        await supabaseClient
+        const {
+            data: sessionData
+        } = await supabaseClient
             .auth
-            .signOut();
+            .getSession();
 
 
-        window.location.href =
-            "./connexion-administrateur.html";
+        const session =
+            sessionData.session;
+
+
+        if (!session) {
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return false;
+        }
+
+
+        const {
+            data: administrateur,
+            error
+        } = await supabaseClient
+
+            .from("administrateurs")
+
+            .select("*")
+
+            .eq(
+                "auth_user_id",
+                session.user.id
+            )
+
+            .eq(
+                "statut",
+                "actif"
+            )
+
+            .maybeSingle();
+
+
+        if (
+            error ||
+            !administrateur
+        ) {
+
+            await supabaseClient
+                .auth
+                .signOut();
+
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return false;
+        }
+
+
+        administrateurConnecte =
+            administrateur;
+
+
+        messagePage.textContent =
+            `Connecté : ${administrateur.prenom} ${administrateur.nom}`;
+
+
+        return true;
+
+    } catch (erreurInattendue) {
+
+        console.error(
+            "Erreur inattendue lors de la vérification :",
+            erreurInattendue
+        );
+
+        messagePage.textContent =
+            "Une erreur inattendue est survenue. Veuillez réessayer ou vous reconnecter.";
 
         return false;
+
     }
-
-
-    administrateurConnecte =
-        administrateur;
-
-
-    messagePage.textContent =
-        `Connecté : ${administrateur.prenom} ${administrateur.nom}`;
-
-
-    return true;
 }
 
 
@@ -328,72 +344,86 @@ async function verifierAdministrateur() {
 
 async function chargerEtudiants() {
 
-    const {
-        data,
-        error
-    } = await supabaseClient
+    try {
 
-        .from("etudiants")
+        const {
+            data,
+            error
+        } = await supabaseClient
 
-        .select(`
-            id,
-            nom,
-            prenom,
-            dette_jus,
-            dette_manger
-        `)
+            .from("etudiants")
 
-        .eq(
-            "statut",
-            "actif"
-        )
+            .select(`
+                id,
+                nom,
+                prenom,
+                dette_jus,
+                dette_manger
+            `)
 
-        .order(
-            "nom",
-            {
-                ascending: true
+            .eq(
+                "statut",
+                "actif"
+            )
+
+            .order(
+                "nom",
+                {
+                    ascending: true
+                }
+            );
+
+
+        if (error) {
+
+            console.error(error);
+
+            etudiantPaiement.innerHTML =
+                '<option value="">Erreur de chargement</option>';
+
+            return;
+        }
+
+
+        tousLesEtudiants =
+            data || [];
+
+
+        etudiantPaiement.innerHTML =
+            '<option value="">-- Choisir un étudiant --</option>';
+
+
+        tousLesEtudiants.forEach(
+            function (etudiant) {
+
+                const option =
+                    document.createElement("option");
+
+
+                option.value =
+                    etudiant.id;
+
+
+                option.textContent =
+                    `${etudiant.prenom} ${etudiant.nom}`;
+
+
+                etudiantPaiement.appendChild(option);
+
             }
         );
 
+    } catch (erreurInattendue) {
 
-    if (error) {
-
-        console.error(error);
+        console.error(
+            "Erreur inattendue lors du chargement des étudiants :",
+            erreurInattendue
+        );
 
         etudiantPaiement.innerHTML =
             '<option value="">Erreur de chargement</option>';
 
-        return;
     }
-
-
-    tousLesEtudiants =
-        data || [];
-
-
-    etudiantPaiement.innerHTML =
-        '<option value="">-- Choisir un étudiant --</option>';
-
-
-    tousLesEtudiants.forEach(
-        function (etudiant) {
-
-            const option =
-                document.createElement("option");
-
-
-            option.value =
-                etudiant.id;
-
-
-            option.textContent =
-                `${etudiant.prenom} ${etudiant.nom}`;
-
-
-            etudiantPaiement.appendChild(option);
-
-        }
-    );
 
 }
 
@@ -565,50 +595,79 @@ formulairePaiement.addEventListener(
             "Enregistrement du paiement...";
 
 
-        const { error: erreurPaiement } = await supabaseClient
-            .rpc("enregistrer_paiement_atomique", {
-                p_etudiant_id: etudiantId,
-                p_categorie: categorie,
-                p_montant: montant,
-                p_moyen_paiement: moyen,
-                p_admin_id: administrateurConnecte.id
-            });
+        const boutonEnregistrerPaiement =
+            formulairePaiement.querySelector(
+                'button[type="submit"]'
+            );
 
-        if (erreurPaiement) {
-            console.error(erreurPaiement);
+
+        boutonEnregistrerPaiement.disabled =
+            true;
+
+
+        try {
+
+            const { error: erreurPaiement } = await supabaseClient
+                .rpc("enregistrer_paiement_atomique", {
+                    p_etudiant_id: etudiantId,
+                    p_categorie: categorie,
+                    p_montant: montant,
+                    p_moyen_paiement: moyen,
+                    p_admin_id: administrateurConnecte.id
+                });
+
+            if (erreurPaiement) {
+                console.error(erreurPaiement);
+                messagePaiement.textContent =
+                    erreurPaiement.message ||
+                    "Impossible d'enregistrer le paiement.";
+                return;
+            }
+
+            // ==================================
+            // SUCCES
+            // ==================================
+
             messagePaiement.textContent =
-                erreurPaiement.message ||
-                "Impossible d'enregistrer le paiement.";
-            return;
+                "Paiement enregistré avec succès.";
+
+
+            formulairePaiement.reset();
+
+
+            soldeJus.textContent =
+                "-";
+
+
+            soldeManger.textContent =
+                "-";
+
+
+            etudiantSelectionne =
+                null;
+
+
+            await chargerEtudiants();
+
+
+            await chargerPaiements();
+
+        } catch (erreurInattendue) {
+
+            console.error(
+                "Erreur inattendue :",
+                erreurInattendue
+            );
+
+            messagePaiement.textContent =
+                "Une erreur inattendue est survenue.";
+
+        } finally {
+
+            boutonEnregistrerPaiement.disabled =
+                false;
+
         }
-
-        // ==================================
-        // SUCCES
-        // ==================================
-
-        messagePaiement.textContent =
-            "Paiement enregistré avec succès.";
-
-
-        formulairePaiement.reset();
-
-
-        soldeJus.textContent =
-            "-";
-
-
-        soldeManger.textContent =
-            "-";
-
-
-        etudiantSelectionne =
-            null;
-
-
-        await chargerEtudiants();
-
-
-        await chargerPaiements();
 
     }
 );
@@ -623,58 +682,71 @@ async function chargerPaiements() {
     listePaiements.innerHTML =
         "Chargement de l'historique...";
 
+    try {
 
-    const {
-        data,
-        error
-    } = await supabaseClient
+        const {
+            data,
+            error
+        } = await supabaseClient
 
-        .from("paiements")
+            .from("paiements")
 
-        .select(`
-            id,
-            created_at,
-            categorie,
-            montant,
-            moyen_paiement,
+            .select(`
+                id,
+                created_at,
+                categorie,
+                montant,
+                moyen_paiement,
 
-            etudiants (
-                nom,
-                prenom
-            ),
+                etudiants (
+                    nom,
+                    prenom
+                ),
 
-            administrateurs (
-                nom,
-                prenom
-            )
-        `)
+                administrateurs (
+                    nom,
+                    prenom
+                )
+            `)
 
-        .order(
-            "created_at",
-            {
-                ascending: false
-            }
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+        if (error) {
+
+            console.error(error);
+
+            listePaiements.innerHTML =
+                "Impossible de charger l'historique des paiements.";
+
+            return;
+        }
+
+
+        tousLesPaiements =
+            data || [];
+
+
+        afficherPaiements(
+            tousLesPaiements
         );
 
+    } catch (erreurInattendue) {
 
-    if (error) {
-
-        console.error(error);
+        console.error(
+            "Erreur inattendue lors du chargement des paiements :",
+            erreurInattendue
+        );
 
         listePaiements.innerHTML =
-            "Impossible de charger l'historique des paiements.";
+            "Une erreur inattendue est survenue.";
 
-        return;
     }
-
-
-    tousLesPaiements =
-        data || [];
-
-
-    afficherPaiements(
-        tousLesPaiements
-    );
 
 }
 

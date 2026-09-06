@@ -224,75 +224,90 @@ async function verifierAdministrateur() {
     messagePage.textContent =
         "Vérification de votre accès...";
 
+    try {
 
-    const {
-        data: sessionData,
-        error: sessionError
-    } = await supabaseClient
-        .auth
-        .getSession();
-
-
-    if (
-        sessionError ||
-        !sessionData.session
-    ) {
-
-        window.location.href =
-            "./connexion-administrateur.html";
-
-        return false;
-    }
-
-
-    const session =
-        sessionData.session;
-
-
-    const {
-        data: administrateur,
-        error
-    } = await supabaseClient
-
-        .from("administrateurs")
-
-        .select("id, prenom, nom")
-
-        .eq(
-            "auth_user_id",
-            session.user.id
-        )
-
-        .eq(
-            "statut",
-            "actif"
-        )
-
-        .maybeSingle();
-
-
-    if (
-        error ||
-        !administrateur
-    ) {
-
-        await supabaseClient
+        const {
+            data: sessionData,
+            error: sessionError
+        } = await supabaseClient
             .auth
-            .signOut();
+            .getSession();
 
 
-        window.location.href =
-            "./connexion-administrateur.html";
+        if (
+            sessionError ||
+            !sessionData.session
+        ) {
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return false;
+        }
+
+
+        const session =
+            sessionData.session;
+
+
+        const {
+            data: administrateur,
+            error
+        } = await supabaseClient
+
+            .from("administrateurs")
+
+            .select("id, prenom, nom")
+
+            .eq(
+                "auth_user_id",
+                session.user.id
+            )
+
+            .eq(
+                "statut",
+                "actif"
+            )
+
+            .maybeSingle();
+
+
+        if (
+            error ||
+            !administrateur
+        ) {
+
+            await supabaseClient
+                .auth
+                .signOut();
+
+
+            window.location.href =
+                "./connexion-administrateur.html";
+
+            return false;
+        }
+
+
+        messagePage.textContent =
+            `Connecté : ${administrateur.prenom || ""} ${administrateur.nom || ""}`;
+
+
+        return true;
+
+    } catch (erreurInattendue) {
+
+        console.error(
+            "Erreur inattendue lors de la vérification :",
+            erreurInattendue
+        );
+
+        messagePage.textContent =
+            "Une erreur inattendue est survenue. Veuillez réessayer ou vous reconnecter.";
 
         return false;
+
     }
-
-
-    messagePage.textContent =
-        `Connecté : ${administrateur.prenom || ""} ${administrateur.nom || ""}`;
-
-
-    return true;
 
 }
 
@@ -307,53 +322,66 @@ async function chargerProduits() {
     listeProduits.innerHTML =
         "Chargement des produits...";
 
+    try {
 
-    const {
-        data,
-        error
-    } = await supabaseClient
+        const {
+            data,
+            error
+        } = await supabaseClient
 
-        .from("produits")
+            .from("produits")
 
-        .select(`
-            id,
-            created_at,
-            nom,
-            categorie,
-            prix,
-            actif
-        `)
+            .select(`
+                id,
+                created_at,
+                nom,
+                categorie,
+                prix,
+                actif
+            `)
 
-        .order(
-            "nom",
-            {
-                ascending: true
-            }
+            .order(
+                "nom",
+                {
+                    ascending: true
+                }
+            );
+
+
+        if (error) {
+
+            console.error(
+                "Erreur chargement produits :",
+                error
+            );
+
+
+            listeProduits.innerHTML =
+                "Impossible de charger les produits.";
+
+            return;
+        }
+
+
+        tousLesProduits =
+            data || [];
+
+
+        afficherProduits(
+            tousLesProduits
         );
 
-
-    if (error) {
+    } catch (erreurInattendue) {
 
         console.error(
-            "Erreur chargement produits :",
-            error
+            "Erreur inattendue lors du chargement des produits :",
+            erreurInattendue
         );
 
-
         listeProduits.innerHTML =
-            "Impossible de charger les produits.";
+            "Une erreur inattendue est survenue.";
 
-        return;
     }
-
-
-    tousLesProduits =
-        data || [];
-
-
-    afficherProduits(
-        tousLesProduits
-    );
 
 }
 
