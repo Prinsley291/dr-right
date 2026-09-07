@@ -164,6 +164,22 @@
             }
 
 
+            .colonnes-fiche {
+
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+
+            }
+
+
+            .colonnes-fiche.colonne-fiche-unique {
+
+                grid-template-columns: 1fr;
+
+            }
+
+
             .fiche-table {
 
                 width: 100%;
@@ -1703,6 +1719,7 @@ async function chargerHistoriqueOperations(
             montant,
             moyen_paiement,
             note,
+            lot_id,
             produits (
                 id,
                 nom,
@@ -1804,13 +1821,144 @@ async function chargerHistoriquePaiements(
 // CONSTRUIRE L'HISTORIQUE DES OPERATIONS
 // ==========================================
 
-function construireTableauOperations(
-    operations
-) {
+function regrouperOperationsFiche(operations) {
+
+    const groupesParCle =
+        new Map();
+
+
+    (operations || []).forEach(
+        function (operation) {
+
+            const categorie =
+                operation.categorie ||
+                operation.produits?.categorie ||
+                "Non renseignée";
+
+
+            const cle =
+                (operation.lot_id || ("op-" + operation.id)) +
+                "|" +
+                categorie;
+
+
+            if (!groupesParCle.has(cle)) {
+
+                groupesParCle.set(cle, {
+
+                    categorie:
+                        categorie,
+
+                    date:
+                        operation.created_at,
+
+                    montant:
+                        0,
+
+                    items:
+                        []
+
+                });
+
+            }
+
+
+            const groupe =
+                groupesParCle.get(cle);
+
+
+            const montant =
+                Number(
+                    operation.montant || 0
+                );
+
+
+            groupe.montant +=
+                montant;
+
+
+            if (
+                new Date(operation.created_at) <
+                new Date(groupe.date)
+            ) {
+
+                groupe.date =
+                    operation.created_at;
+
+            }
+
+
+            groupe.items.push({
+
+                nom:
+                    operation.produits
+                        ? operation.produits.nom
+                        : null,
+
+                quantite:
+                    operation.quantite,
+
+                note:
+                    operation.note
+
+            });
+
+        }
+    );
+
+
+    const groupes =
+        Array.from(
+            groupesParCle.values()
+        );
+
+
+    groupes.sort(
+        function (a, b) {
+
+            return (
+                new Date(b.date) -
+                new Date(a.date)
+            );
+
+        }
+    );
+
+
+    return {
+
+        manger:
+            groupes.filter(
+                function (g) {
+
+                    return String(g.categorie)
+                        .toLowerCase()
+                        .includes("manger");
+
+                }
+            ),
+
+        jus:
+            groupes.filter(
+                function (g) {
+
+                    return String(g.categorie)
+                        .toLowerCase()
+                        .includes("jus");
+
+                }
+            )
+
+    };
+
+}
+
+
+function construireMiniTableauGroupes(groupes) {
 
     if (
-        !operations ||
-        operations.length === 0
+        !groupes ||
+        groupes.length === 0
     ) {
 
         return `
@@ -1822,74 +1970,35 @@ function construireTableauOperations(
     }
 
 
-    let totalJus = 0;
-
-    let totalManger = 0;
+    let total = 0;
 
 
     const lignes =
-        operations.map(
-            function (operation) {
+        groupes.map(
+            function (groupe) {
+
+                total +=
+                    groupe.montant;
 
 
-                const categorie =
-                    operation.categorie ||
-                    operation.produits?.categorie ||
-                    "Non renseignée";
+                const detail =
+                    groupe.items.map(
+                        function (item) {
 
+                            if (item.nom) {
 
-                const montant =
-                    Number(
-                        operation.montant || 0
-                    );
+                                return item.quantite
+                                    ? `${item.nom} ×${item.quantite}`
+                                    : item.nom;
 
+                            }
 
-                if (
-                    String(
-                        categorie
-                    )
-                    .toLowerCase()
-                    .includes("jus")
-                ) {
+                            return item.note
+                                ? `Dette (${item.note})`
+                                : "Dette";
 
-                    totalJus +=
-                        montant;
-
-                }
-
-
-                if (
-                    String(
-                        categorie
-                    )
-                    .toLowerCase()
-                    .includes("manger")
-                ) {
-
-                    totalManger +=
-                        montant;
-
-                }
-
-
-                const produit =
-                    operation.produits?.nom ||
-                    "Montant direct";
-
-
-                const quantite =
-                    operation.quantite ??
-                    "—";
-
-
-                const typeOperation =
-                    operation.type_operation ||
-                    "—";
-
-
-                const note =
-                    operation.note ||
-                    "—";
+                        }
+                    ).join(", ");
 
 
                 return `
@@ -1899,44 +2008,20 @@ function construireTableauOperations(
                         <td>
                             ${echapperHTML(
                                 formaterDate(
-                                    operation.created_at
+                                    groupe.date
                                 )
                             )}
                         </td>
 
                         <td>
                             ${echapperHTML(
-                                typeOperation
-                            )}
-                        </td>
-
-                        <td>
-                            ${echapperHTML(
-                                categorie
-                            )}
-                        </td>
-
-                        <td>
-                            ${echapperHTML(
-                                produit
-                            )}
-                        </td>
-
-                        <td>
-                            ${echapperHTML(
-                                String(quantite)
+                                detail
                             )}
                         </td>
 
                         <td class="montant">
                             ${formaterMontant(
-                                montant
-                            )}
-                        </td>
-
-                        <td>
-                            ${echapperHTML(
-                                note
+                                groupe.montant
                             )}
                         </td>
 
@@ -1956,52 +2041,111 @@ function construireTableauOperations(
             <thead>
 
                 <tr>
-
                     <th>Date</th>
-
-                    <th>Type</th>
-
-                    <th>Catégorie</th>
-
-                    <th>Produit</th>
-
-                    <th>Qté</th>
-
+                    <th>Détail</th>
                     <th>Montant</th>
-
-                    <th>Note</th>
-
                 </tr>
 
             </thead>
 
             <tbody>
-
                 ${lignes}
-
             </tbody>
 
         </table>
 
         <p style="font-size: 10px; margin-top: 6px;">
-
-            <strong>
-                Total opérations Jus :
-            </strong>
-
-            ${formaterMontant(totalJus)}
-
-            &nbsp;&nbsp;&nbsp;
-
-            <strong>
-                Total opérations Manger :
-            </strong>
-
-            ${formaterMontant(totalManger)}
-
+            <strong>Total :</strong>
+            ${formaterMontant(total)}
         </p>
 
     `;
+
+}
+
+
+function construireTableauOperations(
+    operations
+) {
+
+    if (
+        !operations ||
+        operations.length === 0
+    ) {
+
+        return `
+            <p class="aucune-donnee">
+                Aucune opération enregistrée.
+            </p>
+        `;
+
+    }
+
+
+    const groupes =
+        regrouperOperationsFiche(
+            operations
+        );
+
+
+    const aManger =
+        groupes.manger.length > 0;
+
+
+    const aJus =
+        groupes.jus.length > 0;
+
+
+    const classeColonnes =
+        (!aManger || !aJus)
+            ? "colonnes-fiche colonne-fiche-unique"
+            : "colonnes-fiche";
+
+
+    let html =
+        `<div class="${classeColonnes}">`;
+
+
+    if (aManger) {
+
+        html += `
+
+            <div>
+                <h4 style="font-size:11px;margin:0 0 4px 0;">
+                    🍽️ Manger
+                </h4>
+                ${construireMiniTableauGroupes(
+                    groupes.manger
+                )}
+            </div>
+
+        `;
+
+    }
+
+
+    if (aJus) {
+
+        html += `
+
+            <div>
+                <h4 style="font-size:11px;margin:0 0 4px 0;">
+                    🧃 Jus
+                </h4>
+                ${construireMiniTableauGroupes(
+                    groupes.jus
+                )}
+            </div>
+
+        `;
+
+    }
+
+
+    html += `</div>`;
+
+
+    return html;
 
 }
 

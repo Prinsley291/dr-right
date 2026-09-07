@@ -8,6 +8,29 @@
     <title>Opérations - Dr. Right</title>
 
     <link rel="stylesheet" href="style.css">
+
+    <style>
+
+        .colonnes-historique {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .colonnes-historique.colonne-unique {
+            grid-template-columns: 1fr;
+        }
+
+        @media (max-width: 600px) {
+
+            .colonnes-historique {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
 </head>
@@ -1205,6 +1228,7 @@ async function chargerOperations() {
                 quantite,
                 montant,
                 note,
+                lot_id,
 
                 etudiants (
                     nom,
@@ -1267,6 +1291,206 @@ async function chargerOperations() {
 // AFFICHER HISTORIQUE
 // ======================================================
 
+function regrouperOperations(operations) {
+
+    const groupesParCle =
+        new Map();
+
+
+    (operations || []).forEach(
+        function (operation) {
+
+            const cle =
+                (operation.lot_id || ("op-" + operation.id)) +
+                "|" +
+                operation.categorie;
+
+
+            if (!groupesParCle.has(cle)) {
+
+                groupesParCle.set(cle, {
+
+                    categorie:
+                        operation.categorie,
+
+                    date:
+                        operation.created_at,
+
+                    nomEtudiant:
+                        operation.etudiants
+                            ? `${operation.etudiants.prenom} ${operation.etudiants.nom}`
+                            : "Étudiant inconnu",
+
+                    typeOperation:
+                        operation.type_operation,
+
+                    montant:
+                        0,
+
+                    items:
+                        []
+
+                });
+
+            }
+
+
+            const groupe =
+                groupesParCle.get(cle);
+
+
+            const montant =
+                Number(operation.montant) || 0;
+
+
+            groupe.montant +=
+                montant;
+
+
+            if (
+                new Date(operation.created_at) <
+                new Date(groupe.date)
+            ) {
+
+                groupe.date =
+                    operation.created_at;
+
+            }
+
+
+            groupe.items.push({
+
+                nom:
+                    operation.produits
+                        ? operation.produits.nom
+                        : null,
+
+                quantite:
+                    operation.quantite,
+
+                note:
+                    operation.note
+
+            });
+
+        }
+    );
+
+
+    const groupes =
+        Array.from(
+            groupesParCle.values()
+        );
+
+
+    groupes.sort(
+        function (a, b) {
+
+            return (
+                new Date(b.date) -
+                new Date(a.date)
+            );
+
+        }
+    );
+
+
+    return {
+
+        manger:
+            groupes.filter(
+                function (g) {
+
+                    return (
+                        g.categorie === "manger"
+                    );
+
+                }
+            ),
+
+        jus:
+            groupes.filter(
+                function (g) {
+
+                    return (
+                        g.categorie === "jus"
+                    );
+
+                }
+            )
+
+    };
+
+}
+
+
+function construireCarteGroupe(groupe) {
+
+    const date =
+        new Date(
+            groupe.date
+        ).toLocaleString("fr-FR");
+
+
+    const titre =
+        groupe.typeOperation === "achat"
+            ? "ACHAT"
+            : "DETTE DIRECTE";
+
+
+    const detailItems =
+        groupe.items.map(
+            function (item) {
+
+                if (item.nom) {
+
+                    return item.quantite
+                        ? `${item.nom} × ${item.quantite}`
+                        : item.nom;
+
+                }
+
+                return item.note
+                    ? `Dette (${item.note})`
+                    : "Dette";
+
+            }
+        ).join(", ");
+
+
+    return `
+
+        <div class="carte-operation">
+
+            <h4>${titre}</h4>
+
+            <p>
+                <strong>Étudiant :</strong>
+                ${groupe.nomEtudiant}
+            </p>
+
+            <p>
+                <strong>Détail :</strong>
+                ${detailItems}
+            </p>
+
+            <p>
+                <strong>Montant :</strong>
+                ${Number(groupe.montant).toLocaleString("fr-FR")} FCFA
+            </p>
+
+            <p>
+                <strong>Date :</strong>
+                ${date}
+            </p>
+
+        </div>
+
+    `;
+
+}
+
+
 function afficherOperations(operations) {
 
     listeOperations.innerHTML =
@@ -1285,138 +1509,73 @@ function afficherOperations(operations) {
     }
 
 
-    operations.forEach(
-        function (operation) {
-
-            const carte =
-                document.createElement("div");
-
-
-            carte.className =
-                "carte-operation";
+    const groupes =
+        regrouperOperations(
+            operations
+        );
 
 
-            const nomEtudiant =
-                operation.etudiants
-                    ? `${operation.etudiants.prenom} ${operation.etudiants.nom}`
-                    : "Étudiant inconnu";
+    const aManger =
+        groupes.manger.length > 0;
 
 
-            const date =
-                new Date(
-                    operation.created_at
-                ).toLocaleString("fr-FR");
+    const aJus =
+        groupes.jus.length > 0;
 
 
-            const categorie =
-                operation.categorie
-                    ? operation.categorie.toUpperCase()
-                    : "-";
+    const classeColonnes =
+        (!aManger || !aJus)
+            ? "colonnes-historique colonne-unique"
+            : "colonnes-historique";
 
 
-            let titre = "";
+    let html =
+        `<div class="${classeColonnes}">`;
 
 
-            if (
-                operation.type_operation ===
-                "achat"
-            ) {
+    if (aManger) {
 
-                titre =
-                    `ACHAT — ${categorie}`;
+        html += `
 
-            } else {
+            <div class="colonne-historique">
 
-                titre =
-                    `DETTE DIRECTE — ${categorie}`;
+                <h4>🍽️ Manger</h4>
 
-            }
+                ${groupes.manger.map(
+                    construireCarteGroupe
+                ).join("")}
 
+            </div>
 
-            let detailsProduit =
-                "";
+        `;
 
-
-            if (
-                operation.type_operation ===
-                "achat"
-            ) {
-
-                const nomProduit =
-                    operation.produits
-                        ? operation.produits.nom
-                        : "Produit inconnu";
+    }
 
 
-                detailsProduit = `
+    if (aJus) {
 
-                    <p>
-                        <strong>Produit :</strong>
-                        ${nomProduit}
-                    </p>
+        html += `
 
-                    <p>
-                        <strong>Quantité :</strong>
-                        ${operation.quantite}
-                    </p>
+            <div class="colonne-historique">
 
-                `;
+                <h4>🧃 Jus</h4>
 
-            }
+                ${groupes.jus.map(
+                    construireCarteGroupe
+                ).join("")}
 
+            </div>
 
-            let detailsNote =
-                "";
+        `;
+
+    }
 
 
-            if (operation.note) {
-
-                detailsNote = `
-
-                    <p>
-                        <strong>Note :</strong>
-                        ${operation.note}
-                    </p>
-
-                `;
-
-            }
+    html += `</div>`;
 
 
-            carte.innerHTML = `
-
-                <h4>${titre}</h4>
-
-                <p>
-                    <strong>Étudiant :</strong>
-                    ${nomEtudiant}
-                </p>
-
-                ${detailsProduit}
-
-                <p>
-                    <strong>Montant :</strong>
-                    ${Number(operation.montant).toLocaleString("fr-FR")} FCFA
-                </p>
-
-                ${detailsNote}
-
-                <p>
-                    <strong>Date :</strong>
-                    ${date}
-                </p>
-
-                <hr>
-
-            `;
-
-
-            listeOperations.appendChild(
-                carte
-            );
-
-        }
-    );
+    listeOperations.innerHTML =
+        html;
 
 }
 

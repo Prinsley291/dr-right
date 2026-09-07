@@ -9,6 +9,33 @@
     <title>Mon compte - Dr. Right</title>
 
     <link rel="stylesheet" href="style.css">
+
+    <style>
+
+        .colonnes-historique {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .colonnes-historique.colonne-unique {
+            grid-template-columns: 1fr;
+        }
+
+        .colonne-historique h4 {
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 600px) {
+
+            .colonnes-historique {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-client.js"></script>
 </head>
@@ -463,6 +490,355 @@ async function chargerProfilEtudiant() {
 // CHARGER HISTORIQUE OPERATIONS
 // ==========================================
 
+function construireCarteElement(element) {
+
+    const date =
+        new Date(element.date).toLocaleString(
+            "fr-FR",
+            {
+                day: "numeric",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+
+    // ==================================
+    // PAIEMENT
+    // ==================================
+
+    if (element.type === "paiement") {
+
+        return `
+
+            <div class="ligne-historique">
+
+                <div>
+                    <p class="ligne-historique-titre">
+                        Paiement
+                    </p>
+                    <p class="ligne-historique-meta">
+                        ${element.moyen}, ${date}
+                    </p>
+                </div>
+
+                <div class="ligne-historique-montant paiement">
+                    − ${element.montant} FCFA
+                </div>
+
+            </div>
+
+        `;
+
+    }
+
+
+    // ==================================
+    // OPERATION (achat / dette),
+    // potentiellement plusieurs produits
+    // regroupés sur la même carte.
+    // ==================================
+
+    const detailItems =
+        element.items.map(
+            function (item) {
+
+                if (item.nom) {
+
+                    return item.quantite
+                        ? `${item.nom} × ${item.quantite}`
+                        : item.nom;
+
+                }
+
+                return item.note
+                    ? `Dette ajoutée (${item.note})`
+                    : "Dette ajoutée";
+
+            }
+        ).join(", ");
+
+
+    return `
+
+        <div class="ligne-historique">
+
+            <div>
+                <p class="ligne-historique-titre">
+                    ${detailItems}
+                </p>
+                <p class="ligne-historique-meta">
+                    ${date}
+                </p>
+            </div>
+
+            <div class="ligne-historique-montant">
+                + ${element.montant} FCFA
+            </div>
+
+        </div>
+
+    `;
+
+}
+
+
+function construireElementsHistorique(
+    operations,
+    paiements
+) {
+
+    // Les opérations issues d'une même soumission de panier
+    // (même lot_id) ET de la même catégorie sont regroupées
+    // sur une seule carte. Les anciennes opérations sans
+    // lot_id (avant cette mise à jour) restent chacune sur
+    // leur propre carte.
+
+    const groupesParCle =
+        new Map();
+
+
+    (operations || []).forEach(
+        function (operation) {
+
+            const cle =
+                (operation.lot_id || ("op-" + operation.id)) +
+                "|" +
+                operation.categorie;
+
+
+            if (!groupesParCle.has(cle)) {
+
+                groupesParCle.set(cle, {
+
+                    type:
+                        "operation",
+
+                    categorie:
+                        operation.categorie,
+
+                    date:
+                        operation.created_at,
+
+                    montant:
+                        0,
+
+                    items:
+                        []
+
+                });
+
+            }
+
+
+            const groupe =
+                groupesParCle.get(cle);
+
+
+            const montant =
+                Number(
+                    operation.montant
+                ) || 0;
+
+
+            groupe.montant +=
+                montant;
+
+
+            if (
+                new Date(operation.created_at) <
+                new Date(groupe.date)
+            ) {
+
+                groupe.date =
+                    operation.created_at;
+
+            }
+
+
+            groupe.items.push({
+
+                nom:
+                    operation.produits
+                        ? operation.produits.nom
+                        : null,
+
+                quantite:
+                    operation.quantite,
+
+                note:
+                    operation.note
+
+            });
+
+        }
+    );
+
+
+    const elementsOperations =
+        Array.from(
+            groupesParCle.values()
+        );
+
+
+    // Les paiements restent des éléments individuels
+
+    const elementsPaiements =
+        (paiements || []).map(
+            function (paiement) {
+
+                return {
+
+                    type:
+                        "paiement",
+
+                    categorie:
+                        paiement.categorie,
+
+                    date:
+                        paiement.created_at,
+
+                    montant:
+                        Number(
+                            paiement.montant
+                        ) || 0,
+
+                    moyen:
+                        paiement.moyen_paiement,
+
+                    items:
+                        []
+
+                };
+
+            }
+        );
+
+
+    const tousLesElements =
+        elementsOperations.concat(
+            elementsPaiements
+        );
+
+
+    tousLesElements.sort(
+        function (a, b) {
+
+            return (
+                new Date(b.date) -
+                new Date(a.date)
+            );
+
+        }
+    );
+
+
+    return {
+
+        manger:
+            tousLesElements.filter(
+                function (element) {
+
+                    return (
+                        element.categorie ===
+                        "manger"
+                    );
+
+                }
+            ),
+
+        jus:
+            tousLesElements.filter(
+                function (element) {
+
+                    return (
+                        element.categorie ===
+                        "jus"
+                    );
+
+                }
+            )
+
+    };
+
+}
+
+
+function afficherColonnesHistorique(
+    container,
+    elements
+) {
+
+    const aManger =
+        elements.manger.length > 0;
+
+
+    const aJus =
+        elements.jus.length > 0;
+
+
+    const classeColonnes =
+        (!aManger || !aJus)
+            ? "colonnes-historique colonne-unique"
+            : "colonnes-historique";
+
+
+    let html =
+        `<div class="${classeColonnes}">`;
+
+
+    if (aManger) {
+
+        html += `
+
+            <div class="colonne-historique">
+
+                <h4>🍽️ Manger</h4>
+
+                ${elements.manger.map(
+                    construireCarteElement
+                ).join("")}
+
+            </div>
+
+        `;
+
+    }
+
+
+    if (aJus) {
+
+        html += `
+
+            <div class="colonne-historique">
+
+                <h4>🧃 Jus</h4>
+
+                ${elements.jus.map(
+                    construireCarteElement
+                ).join("")}
+
+            </div>
+
+        `;
+
+    }
+
+
+    html += `</div>`;
+
+
+    container.innerHTML =
+        html;
+
+}
+
+
+// ==========================================
+// CHARGER HISTORIQUE OPERATIONS
+// ==========================================
+
 async function chargerHistorique() {
 
     if (!etudiantConnecte) {
@@ -497,6 +873,7 @@ async function chargerHistorique() {
                 quantite,
                 montant,
                 note,
+                lot_id,
                 produits (
                     nom
                 )
@@ -571,95 +948,14 @@ async function chargerHistorique() {
 
 
         // --------------------------------------
-        // REGROUPER LES ELEMENTS
+        // REGROUPER PAR LOT + CATEGORIE
         // --------------------------------------
 
-        const historique =
-            [];
-
-
-        // OPERATIONS
-
-        (operations || []).forEach(
-            function (operation) {
-
-                historique.push({
-
-                    type:
-                        "operation",
-
-                    date:
-                        operation.created_at,
-
-                    categorie:
-                        operation.categorie,
-
-                    montant:
-                        Number(
-                            operation.montant
-                        ) || 0,
-
-                    quantite:
-                        operation.quantite,
-
-                    note:
-                        operation.note,
-
-                    produit:
-                        operation.produits
-                            ? operation.produits.nom
-                            : null
-
-                });
-
-            }
-        );
-
-
-        // PAIEMENTS
-
-        (paiements || []).forEach(
-            function (paiement) {
-
-                historique.push({
-
-                    type:
-                        "paiement",
-
-                    date:
-                        paiement.created_at,
-
-                    categorie:
-                        paiement.categorie,
-
-                    montant:
-                        Number(
-                            paiement.montant
-                        ) || 0,
-
-                    moyen:
-                        paiement.moyen_paiement
-
-                });
-
-            }
-        );
-
-
-        // --------------------------------------
-        // TRIER PAR DATE
-        // --------------------------------------
-
-        historique.sort(
-            function (a, b) {
-
-                return (
-                    new Date(b.date) -
-                    new Date(a.date)
-                );
-
-            }
-        );
+        const elements =
+            construireElementsHistorique(
+                operations,
+                paiements
+            );
 
 
         // --------------------------------------
@@ -667,7 +963,8 @@ async function chargerHistorique() {
         // --------------------------------------
 
         if (
-            historique.length === 0
+            elements.manger.length === 0 &&
+            elements.jus.length === 0
         ) {
 
             historiqueEtudiant.innerHTML =
@@ -679,133 +976,12 @@ async function chargerHistorique() {
 
 
         // --------------------------------------
-        // AFFICHER HISTORIQUE
+        // AFFICHER EN DEUX COLONNES
         // --------------------------------------
 
-        historiqueEtudiant.innerHTML =
-            "";
-
-
-        historique.forEach(
-            function (element) {
-
-                const ligne =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                ligne.className =
-                    "ligne-historique";
-
-
-                const date =
-                    new Date(
-                        element.date
-                    ).toLocaleString(
-                        "fr-FR",
-                        {
-                            day:
-                                "numeric",
-                            month:
-                                "short",
-                            hour:
-                                "2-digit",
-                            minute:
-                                "2-digit"
-                        }
-                    );
-
-
-                const categorieAffichee =
-                    element.categorie
-                        ? element.categorie.charAt(0).toUpperCase() +
-                          element.categorie.slice(1)
-                        : "";
-
-
-                // ==================================
-                // PAIEMENT
-                // ==================================
-
-                if (
-                    element.type ===
-                    "paiement"
-                ) {
-
-                    ligne.innerHTML = `
-
-                        <div>
-                            <p class="ligne-historique-titre">
-                                Paiement ${categorieAffichee}
-                            </p>
-                            <p class="ligne-historique-meta">
-                                ${element.moyen}, ${date}
-                            </p>
-                        </div>
-
-                        <div class="ligne-historique-montant paiement">
-                            − ${element.montant} FCFA
-                        </div>
-
-                    `;
-
-                }
-
-
-                // ==================================
-                // ACHAT / DETTE
-                // ==================================
-
-                else {
-
-                    const titre =
-                        element.produit
-                            ? `${element.produit}${
-                                  element.quantite
-                                      ? " × " + element.quantite
-                                      : ""
-                              }`
-                            : "Dette ajoutée";
-
-
-                    let meta =
-                        `${categorieAffichee}, ${date}`;
-
-
-                    if (element.note) {
-
-                        meta =
-                            `${meta} (${element.note})`;
-
-                    }
-
-
-                    ligne.innerHTML = `
-
-                        <div>
-                            <p class="ligne-historique-titre">
-                                ${titre}
-                            </p>
-                            <p class="ligne-historique-meta">
-                                ${meta}
-                            </p>
-                        </div>
-
-                        <div class="ligne-historique-montant">
-                            + ${element.montant} FCFA
-                        </div>
-
-                    `;
-
-                }
-
-
-                historiqueEtudiant.appendChild(
-                    ligne
-                );
-
-            }
+        afficherColonnesHistorique(
+            historiqueEtudiant,
+            elements
         );
 
     } catch (erreurInattendue) {
