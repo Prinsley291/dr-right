@@ -376,7 +376,7 @@ textarea {
 
 
 /* =========================================
-   HISTORIQUE OPERATIONS
+   HISTORIQUE OPERATIONS (ADMIN)
    ========================================= */
 
 #recherche-operation {
@@ -421,6 +421,73 @@ textarea {
 
 .carte-operation p {
     margin: 8px 0;
+}
+
+
+/* =========================================
+   HISTORIQUE ETUDIANT (vue compacte)
+   Utilisé uniquement par etudiant.html, sans
+   toucher au style des cartes admin ci-dessus.
+   ========================================= */
+
+#historique-etudiant {
+    margin-top: 5px;
+
+    text-align: left;
+}
+
+
+.ligne-historique {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 12px;
+
+    padding: 10px 2px;
+
+    border-bottom: 1px solid #edf0f4;
+}
+
+
+.ligne-historique:last-child {
+    border-bottom: none;
+}
+
+
+.ligne-historique-titre {
+    margin: 0;
+
+    font-weight: bold;
+
+    color: #333;
+
+    font-size: 15px;
+}
+
+
+.ligne-historique-meta {
+    margin: 2px 0 0;
+
+    font-size: 13px;
+
+    color: #8a8f98;
+}
+
+
+.ligne-historique-montant {
+    font-weight: bold;
+
+    white-space: nowrap;
+
+    color: #0b5ed7;
+}
+
+
+.ligne-historique-montant.paiement {
+    color: #1e8e5a;
 }
 
 
