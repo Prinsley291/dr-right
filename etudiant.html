@@ -689,22 +689,39 @@ async function chargerHistorique() {
         historique.forEach(
             function (element) {
 
-                const carte =
+                const ligne =
                     document.createElement(
                         "div"
                     );
 
 
-                carte.className =
-                    "carte-operation";
+                ligne.className =
+                    "ligne-historique";
 
 
                 const date =
                     new Date(
                         element.date
                     ).toLocaleString(
-                        "fr-FR"
+                        "fr-FR",
+                        {
+                            day:
+                                "numeric",
+                            month:
+                                "short",
+                            hour:
+                                "2-digit",
+                            minute:
+                                "2-digit"
+                        }
                     );
+
+
+                const categorieAffichee =
+                    element.categorie
+                        ? element.categorie.charAt(0).toUpperCase() +
+                          element.categorie.slice(1)
+                        : "";
 
 
                 // ==================================
@@ -716,26 +733,20 @@ async function chargerHistorique() {
                     "paiement"
                 ) {
 
-                    carte.innerHTML = `
+                    ligne.innerHTML = `
 
-                        <h4>
-                            PAIEMENT — ${element.categorie.toUpperCase()}
-                        </h4>
+                        <div>
+                            <p class="ligne-historique-titre">
+                                Paiement ${categorieAffichee}
+                            </p>
+                            <p class="ligne-historique-meta">
+                                ${element.moyen}, ${date}
+                            </p>
+                        </div>
 
-                        <p>
-                            <strong>Montant payé :</strong>
-                            ${element.montant} FCFA
-                        </p>
-
-                        <p>
-                            <strong>Moyen :</strong>
-                            ${element.moyen}
-                        </p>
-
-                        <p>
-                            <strong>Date :</strong>
-                            ${date}
-                        </p>
+                        <div class="ligne-historique-montant paiement">
+                            − ${element.montant} FCFA
+                        </div>
 
                     `;
 
@@ -748,100 +759,50 @@ async function chargerHistorique() {
 
                 else {
 
-                    let contenu =
-                        `
-                        <h4>
-                            ${element.categorie.toUpperCase()}
-                        </h4>
-                    `;
+                    const titre =
+                        element.produit
+                            ? `${element.produit}${
+                                  element.quantite
+                                      ? " × " + element.quantite
+                                      : ""
+                              }`
+                            : "Dette ajoutée";
 
 
-                    if (element.produit) {
-
-                        contenu += `
-
-                            <p>
-                                <strong>Produit :</strong>
-                                ${element.produit}
-                            </p>
-
-                        `;
-
-
-                        if (
-                            element.quantite
-                        ) {
-
-                            contenu += `
-
-                                <p>
-                                    <strong>Quantité :</strong>
-                                    ${element.quantite}
-                                </p>
-
-                            `;
-
-                        }
-
-                    }
-
-
-                    else {
-
-                        contenu += `
-
-                            <p>
-                                <strong>Dette ajoutée :</strong>
-                                ${element.montant} FCFA
-                            </p>
-
-                        `;
-
-                    }
-
-
-                    contenu += `
-
-                        <p>
-                            <strong>Montant :</strong>
-                            ${element.montant} FCFA
-                        </p>
-
-                    `;
+                    let meta =
+                        `${categorieAffichee}, ${date}`;
 
 
                     if (element.note) {
 
-                        contenu += `
-
-                            <p>
-                                <strong>Note :</strong>
-                                ${element.note}
-                            </p>
-
-                        `;
+                        meta =
+                            `${meta} (${element.note})`;
 
                     }
 
 
-                    contenu += `
+                    ligne.innerHTML = `
 
-                        <p>
-                            <strong>Date :</strong>
-                            ${date}
-                        </p>
+                        <div>
+                            <p class="ligne-historique-titre">
+                                ${titre}
+                            </p>
+                            <p class="ligne-historique-meta">
+                                ${meta}
+                            </p>
+                        </div>
+
+                        <div class="ligne-historique-montant">
+                            + ${element.montant} FCFA
+                        </div>
 
                     `;
-
-
-                    carte.innerHTML =
-                        contenu;
 
                 }
 
 
                 historiqueEtudiant.appendChild(
-                    carte
+                    ligne
                 );
 
             }
